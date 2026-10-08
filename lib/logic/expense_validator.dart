@@ -1,18 +1,32 @@
 import '../domain/models/person.dart';
 import '../domain/models/split_type.dart';
+import '../domain/models/currency.dart';
+import '../domain/models/expense.dart';
+import '../domain/models/money.dart';
 
 class ExpenseValidator {
   static String? validate({
     required String description,
     required double amount,
     required Person? payer,
+    List<ExpensePayer>? payers,
     required List<Person> participants,
     required SplitType splitType,
     Map<String, double>? splitDetails,
+    Currency referenceCurrency = Currency.ars,
   }) {
     if (description.trim().isEmpty) return 'La descripción es obligatoria.';
     if (amount <= 0) return 'El monto debe ser mayor a cero.';
-    if (payer == null) return 'Seleccioná quién pagó.';
+    if (payer == null && (payers == null || payers.isEmpty)) {
+      return 'Seleccioná quién pagó.';
+    }
+    if (payers != null && payers.isNotEmpty) {
+      final expectedCents = Money.fromDecimal(amount, referenceCurrency).cents;
+      final paidCents = payers.fold<int>(0, (sum, item) => sum + item.amount.cents);
+      if (paidCents != expectedCents) {
+        return 'Los importes de los pagadores deben sumar ${amount.toStringAsFixed(2)}.';
+      }
+    }
     if (participants.isEmpty) return 'Seleccioná al menos un participante.';
 
     final details = splitDetails ?? const <String, double>{};

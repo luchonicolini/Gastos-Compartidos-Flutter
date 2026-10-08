@@ -46,11 +46,13 @@ class BalanceCalculator {
     Map<String, double> balances,
   ) {
     for (final expense in expenses) {
-      final payer = expense.payer;
-      if (payer == null || expense.amount <= 0) continue;
+      if (expense.payers.isEmpty || expense.amount <= 0) continue;
 
-      if (currentMemberIds.contains(payer.id)) {
-        balances[payer.id] = (balances[payer.id] ?? 0.0) + expense.amount;
+      for (final payer in expense.payers) {
+        if (currentMemberIds.contains(payer.person.id)) {
+          balances[payer.person.id] =
+              (balances[payer.person.id] ?? 0.0) + payer.amount.decimalValue;
+        }
       }
 
       final currentParticipants = expense.participants

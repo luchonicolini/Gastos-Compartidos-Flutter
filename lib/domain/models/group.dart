@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'currency.dart';
 import 'person.dart';
 import 'expense.dart';
 import 'settlement_payment.dart';
@@ -9,6 +10,7 @@ class Group {
   final DateTime creationDate;
   final String? iconName;
   final String? colorHex;
+  final Currency referenceCurrency;
   final List<Person> members;
   final List<Expense> expenses;
   final List<SettlementPayment> settlementPayments;
@@ -19,11 +21,13 @@ class Group {
     DateTime? creationDate,
     this.iconName,
     this.colorHex,
+    Currency? referenceCurrency,
     List<Person>? members,
     List<Expense>? expenses,
     List<SettlementPayment>? settlementPayments,
   })  : id = id ?? const Uuid().v4(),
         creationDate = creationDate ?? DateTime.now(),
+        referenceCurrency = referenceCurrency ?? Currency.ars,
         members = members ?? [],
         expenses = expenses ?? [],
         settlementPayments = settlementPayments ?? [];
@@ -34,6 +38,7 @@ class Group {
     DateTime? creationDate,
     String? iconName,
     String? colorHex,
+    Currency? referenceCurrency,
     List<Person>? members,
     List<Expense>? expenses,
     List<SettlementPayment>? settlementPayments,
@@ -44,6 +49,7 @@ class Group {
       creationDate: creationDate ?? this.creationDate,
       iconName: iconName ?? this.iconName,
       colorHex: colorHex ?? this.colorHex,
+      referenceCurrency: referenceCurrency ?? this.referenceCurrency,
       members: members ?? this.members,
       expenses: expenses ?? this.expenses,
       settlementPayments: settlementPayments ?? this.settlementPayments,

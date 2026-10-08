@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/domain/models/expense.dart';
+import 'package:gastos_compartidos/domain/models/currency.dart';
+import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
 import 'package:gastos_compartidos/domain/models/settlement_payment.dart';
 import 'package:gastos_compartidos/logic/balance_calculator.dart';
@@ -90,6 +92,24 @@ void main() {
       expect(settlements.first.payerName, 'Sam');
       expect(settlements.first.payeeName, 'Frodo');
       expect(settlements.first.amount, 50.00);
+    });
+
+    test('Calcula un gasto con múltiples pagadores', () {
+      final expense = Expense(
+        description: 'Hotel',
+        amount: 200,
+        payers: [
+          ExpensePayer(person: frodo, amount: Money.fromString('120', Currency.ars)),
+          ExpensePayer(person: sam, amount: Money.fromString('80', Currency.ars)),
+        ],
+        participants: [frodo, sam],
+      );
+      final group = Group(name: 'Viaje', members: [frodo, sam], expenses: [expense]);
+
+      final balances = BalanceCalculator.calculateMemberBalances(group);
+
+      expect(balances.firstWhere((item) => item.id == frodo.id).balance, 20);
+      expect(balances.firstWhere((item) => item.id == sam.id).balance, -20);
     });
 
     test('Confirmación de pago de liquidación salda la deuda', () {

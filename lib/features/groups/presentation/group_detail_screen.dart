@@ -262,7 +262,11 @@ class _ExpenseTile extends StatelessWidget {
       child: ListTile(
         leading: const CircleAvatar(child: Icon(Icons.receipt_long_outlined)),
         title: Text(expense.description),
-        subtitle: Text('Pagó ${expense.payer?.name ?? 'Sin definir'} • ${expense.splitType.localizedDescription}'),
+        subtitle: Text(
+          'Pagó ${expense.payer?.name ?? (expense.payers.length > 1 ? 'varias personas' : 'Sin definir')} • '
+          '${expense.originalCurrency.symbol}${expense.originalAmount.decimalValue.toStringAsFixed(2)} ${expense.originalCurrency.code} • '
+          '${expense.splitType.localizedDescription}',
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

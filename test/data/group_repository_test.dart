@@ -4,6 +4,8 @@ import 'package:gastos_compartidos/data/database/app_database.dart' as database;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
 import 'package:gastos_compartidos/domain/models/expense.dart';
+import 'package:gastos_compartidos/domain/models/currency.dart';
+import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
 
@@ -100,5 +102,42 @@ void main() {
     expect(loaded.expenses.single.participants, hasLength(2));
     expect(loaded.expenses.single.splitType, SplitType.byPercentage);
     expect(loaded.expenses.single.splitDetails?['person-6'], 40);
+  });
+
+  test('persiste moneda original, conversión y múltiples pagadores', () async {
+    final luciano = Person(id: 'person-7', name: 'Luciano');
+    final ana = Person(id: 'person-8', name: 'Ana');
+    final group = Group(
+      id: 'group-4',
+      name: 'Brasil',
+      members: [luciano, ana],
+      expenses: [
+        Expense(
+          id: 'expense-2',
+          description: 'Hotel',
+          amount: 87500,
+          originalAmount: Money.fromString('350', Currency.brl),
+          originalCurrency: Currency.brl,
+          convertedAmount: Money.fromString('87500', Currency.ars),
+          referenceCurrency: Currency.ars,
+          exchangeRate: 250,
+          payers: [
+            ExpensePayer(person: luciano, amount: Money.fromString('60000', Currency.ars)),
+            ExpensePayer(person: ana, amount: Money.fromString('27500', Currency.ars)),
+          ],
+          participants: [luciano, ana],
+        ),
+      ],
+    );
+
+    await repository.save(group);
+    final expense = (await repository.getAll()).single.expenses.single;
+
+    expect(expense.originalAmount, Money.fromString('350', Currency.brl));
+    expect(expense.originalCurrency, Currency.brl);
+    expect(expense.referenceCurrency, Currency.ars);
+    expect(expense.exchangeRate, 250);
+    expect(expense.payers, hasLength(2));
+    expect(expense.payers.first.amount.cents + expense.payers.last.amount.cents, 8750000);
   });
 }

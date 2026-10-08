@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import '../../domain/models/group.dart' as domain;
 import '../../domain/models/expense.dart' as domain;
 import '../../domain/models/person.dart' as domain;
+import '../../domain/models/currency.dart' as domain_currency;
+import '../../domain/models/money.dart' as domain_money;
 import '../../domain/models/split_type.dart';
 import '../database/app_database.dart';
 
@@ -22,6 +24,7 @@ class LocalGroupRepository {
               creationDate: group.creationDate,
               iconName: Value(group.iconName),
               colorHex: Value(group.colorHex),
+              referenceCurrencyCode: Value(group.referenceCurrency.code),
             ),
           );
 
@@ -57,6 +60,9 @@ class LocalGroupRepository {
         await (_database.delete(_database.expenseSplits)
               ..where((item) => item.expenseId.equals(expense.id)))
             .go();
+        await (_database.delete(_database.expensePayers)
+              ..where((item) => item.expenseId.equals(expense.id)))
+            .go();
         await (_database.delete(_database.expenses)
               ..where((item) => item.id.equals(expense.id)))
             .go();
@@ -75,8 +81,23 @@ class LocalGroupRepository {
                 splitDetailsJson: Value(
                   expense.splitDetails == null ? null : jsonEncode(expense.splitDetails),
                 ),
+                originalAmountCents: Value(expense.originalAmount.cents),
+                originalCurrencyCode: Value(expense.originalCurrency.code),
+                referenceCurrencyCode: Value(expense.referenceCurrency.code),
+                exchangeRate: Value(expense.exchangeRate),
               ),
             );
+
+        for (final payer in expense.payers) {
+          await _database.into(_database.expensePayers).insert(
+                ExpensePayersCompanion.insert(
+                  expenseId: expense.id,
+                  personId: payer.person.id,
+                  amountCents: payer.amount.cents,
+                  currencyCode: payer.amount.currency.code,
+                ),
+              );
+        }
 
         for (final participant in expense.participants) {
           await _database.into(_database.expenseParticipants).insert(
@@ -113,6 +134,9 @@ class LocalGroupRepository {
               ..where((item) => item.expenseId.equals(expense.id)))
             .go();
         await (_database.delete(_database.expenseSplits)
+              ..where((item) => item.expenseId.equals(expense.id)))
+            .go();
+        await (_database.delete(_database.expensePayers)
               ..where((item) => item.expenseId.equals(expense.id)))
             .go();
       }
@@ -173,6 +197,26 @@ class LocalGroupRepository {
             .map((row) => _toPerson(row.readTable(_database.persons)))
             .toList();
 
+        final payerRows = await (_database.select(_database.persons).join([
+          innerJoin(
+            _database.expensePayers,
+            _database.expensePayers.personId.equalsExp(_database.persons.id),
+          ),
+        ])
+              ..where(_database.expensePayers.expenseId.equals(expenseRow.id)))
+            .get();
+        final payers = payerRows.map((row) {
+          final person = _toPerson(row.readTable(_database.persons));
+          final payer = row.readTable(_database.expensePayers);
+          return domain.ExpensePayer(
+            person: person,
+            amount: domain_money.Money(
+              cents: payer.amountCents,
+              currency: domain_currency.Currency.fromCode(payer.currencyCode),
+            ),
+          );
+        }).toList();
+
         domain.Person? payer;
         final payerId = expenseRow.payerId;
         if (payerId != null) {
@@ -195,10 +239,38 @@ class LocalGroupRepository {
             amount: expenseRow.amount,
             date: expenseRow.date,
             payer: payer,
+            payers: payers.isNotEmpty
+                ? payers
+                : payer == null
+                    ? const []
+                    : [
+                        domain.ExpensePayer(
+                          person: payer,
+                          amount: domain_money.Money(
+                            cents: (expenseRow.amount * 100).round(),
+                            currency: domain_currency.Currency.fromCode(
+                              expenseRow.referenceCurrencyCode,
+                            ),
+                          ),
+                        ),
+                      ],
             participants: participants,
             groupId: expenseRow.groupId,
             splitType: SplitType.values[expenseRow.splitType],
             splitDetails: details,
+            originalAmount: domain_money.Money(
+              cents: expenseRow.originalAmountCents == 0
+                  ? (expenseRow.amount * 100).round()
+                  : expenseRow.originalAmountCents,
+              currency: domain_currency.Currency.fromCode(expenseRow.originalCurrencyCode),
+            ),
+            originalCurrency: domain_currency.Currency.fromCode(expenseRow.originalCurrencyCode),
+            convertedAmount: domain_money.Money(
+              cents: (expenseRow.amount * 100).round(),
+              currency: domain_currency.Currency.fromCode(expenseRow.referenceCurrencyCode),
+            ),
+            referenceCurrency: domain_currency.Currency.fromCode(expenseRow.referenceCurrencyCode),
+            exchangeRate: expenseRow.exchangeRate,
           ),
         );
       }
@@ -210,6 +282,7 @@ class LocalGroupRepository {
           creationDate: groupRow.creationDate,
           iconName: groupRow.iconName,
           colorHex: groupRow.colorHex,
+          referenceCurrency: domain_currency.Currency.fromCode(groupRow.referenceCurrencyCode),
           members: members,
           expenses: expenses,
         ),

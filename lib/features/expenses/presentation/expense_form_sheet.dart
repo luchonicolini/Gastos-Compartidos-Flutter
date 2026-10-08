@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/expense.dart';
+import '../../../domain/models/currency.dart';
 import '../../../domain/models/group.dart';
+import '../../../domain/models/money.dart';
 import '../../../domain/models/person.dart';
 import '../../../domain/models/split_type.dart';
 import '../../../logic/expense_validator.dart';
@@ -20,10 +22,13 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
   late DateTime _date;
-  late Person? _payer;
+  late Currency _originalCurrency;
+  late final TextEditingController _exchangeRateController;
+  late Set<String> _selectedPayerIds;
   late Set<String> _selectedParticipantIds;
   late SplitType _splitType;
   final Map<String, TextEditingController> _detailControllers = {};
+  final Map<String, TextEditingController> _payerAmountControllers = {};
   String? _errorText;
 
   List<Person> get _activeMembers =>
@@ -40,16 +45,26 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
     return members;
   }
 
+  List<Person> get _availablePayers => _availableMembers;
+
   @override
   void initState() {
     super.initState();
     final expense = widget.initialExpense;
     _descriptionController = TextEditingController(text: expense?.description ?? '');
     _amountController = TextEditingController(
-      text: expense == null ? '' : expense.amount.toStringAsFixed(2),
+      text: expense == null ? '' : expense.originalAmount.decimalValue.toStringAsFixed(2),
+    );
+    _originalCurrency = expense?.originalCurrency ?? widget.group.referenceCurrency;
+    _exchangeRateController = TextEditingController(
+      text: expense == null || _originalCurrency == widget.group.referenceCurrency
+          ? '1'
+          : expense.exchangeRate.toString(),
     );
     _date = expense?.date ?? DateTime.now();
-    _payer = expense?.payer ?? (_activeMembers.isEmpty ? null : _activeMembers.first);
+    _selectedPayerIds = expense != null && expense.payers.isNotEmpty
+        ? expense.payers.map((payer) => payer.person.id).toSet()
+        : (_activeMembers.isEmpty ? <String>{} : {_activeMembers.first.id});
     _selectedParticipantIds = expense == null
         ? _activeMembers.map((member) => member.id).toSet()
         : expense.participants.map((member) => member.id).toSet();
@@ -58,13 +73,22 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
     for (final entry in expense?.splitDetails?.entries ?? const <MapEntry<String, double>>[]) {
       _detailControllers[entry.key] = TextEditingController(text: entry.value.toString());
     }
+    for (final payer in expense?.payers ?? const <ExpensePayer>[]) {
+      _payerAmountControllers[payer.person.id] = TextEditingController(
+        text: payer.amount.decimalValue.toStringAsFixed(2),
+      );
+    }
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _amountController.dispose();
+    _exchangeRateController.dispose();
     for (final controller in _detailControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _payerAmountControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -74,13 +98,22 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
     return _detailControllers.putIfAbsent(personId, () => TextEditingController());
   }
 
+  void _togglePayer(Person member, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedPayerIds.add(member.id);
+      } else {
+        _selectedPayerIds.remove(member.id);
+      }
+    });
+  }
+
   void _toggleParticipant(Person member, bool selected) {
     setState(() {
       if (selected) {
         _selectedParticipantIds.add(member.id);
       } else {
         _selectedParticipantIds.remove(member.id);
-        if (_payer?.id == member.id) _payer = null;
       }
     });
   }
@@ -96,10 +129,29 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
   }
 
   void _submit() {
-    final amount = double.tryParse(_amountController.text.trim().replaceAll(',', '.')) ?? 0;
+    final originalAmountValue = double.tryParse(_amountController.text.trim().replaceAll(',', '.')) ?? 0;
+    final originalAmount = Money.fromDecimal(originalAmountValue, _originalCurrency);
+    final referenceCurrency = widget.group.referenceCurrency;
+    final exchangeRate = _originalCurrency == referenceCurrency
+        ? 1.0
+        : double.tryParse(_exchangeRateController.text.trim().replaceAll(',', '.')) ?? 0;
+    final convertedAmount = originalAmount.convertTo(referenceCurrency, exchangeRate);
+    final amount = convertedAmount.decimalValue;
     final participants = _availableMembers
         .where((member) => _selectedParticipantIds.contains(member.id))
         .toList();
+    final selectedPayers = _availablePayers
+        .where((member) => _selectedPayerIds.contains(member.id))
+        .toList();
+    final payers = selectedPayers.map((member) {
+      final payerAmount = selectedPayers.length == 1
+          ? Money.fromDecimal(amount, referenceCurrency)
+          : Money.fromDecimal(
+              double.tryParse(_payerAmountControllers[member.id]?.text.replaceAll(',', '.') ?? '0') ?? 0,
+              referenceCurrency,
+            );
+      return ExpensePayer(person: member, amount: payerAmount);
+    }).toList();
     final details = _splitType == SplitType.equally
         ? null
         : {
@@ -109,10 +161,12 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
     final error = ExpenseValidator.validate(
       description: _descriptionController.text,
       amount: amount,
-      payer: _payer,
+      payer: selectedPayers.length == 1 ? selectedPayers.first : null,
+      payers: payers,
       participants: participants,
       splitType: _splitType,
       splitDetails: details,
+      referenceCurrency: referenceCurrency,
     );
     if (error != null) {
       setState(() => _errorText = error);
@@ -124,8 +178,14 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
         id: widget.initialExpense?.id,
         description: _descriptionController.text.trim(),
         amount: amount,
+        originalAmount: originalAmount,
+        originalCurrency: _originalCurrency,
+        convertedAmount: convertedAmount,
+        referenceCurrency: referenceCurrency,
+        exchangeRate: exchangeRate,
         date: _date,
-        payer: _payer,
+        payer: selectedPayers.length == 1 ? selectedPayers.first : null,
+        payers: payers,
         participants: participants,
         groupId: widget.group.id,
         splitType: _splitType,
@@ -164,8 +224,32 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
                   TextField(
                     controller: _amountController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(labelText: 'Monto', prefixText: r'$ ', prefixIcon: Icon(Icons.payments_outlined)),
+                    decoration: InputDecoration(
+                      labelText: 'Importe original (${_originalCurrency.code})',
+                      prefixText: '${_originalCurrency.symbol} ',
+                      prefixIcon: const Icon(Icons.payments_outlined),
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<Currency>(
+                    initialValue: _originalCurrency,
+                    decoration: const InputDecoration(labelText: 'Moneda del gasto', prefixIcon: Icon(Icons.currency_exchange_outlined)),
+                    items: Currency.supported
+                        .map((currency) => DropdownMenuItem(value: currency, child: Text('${currency.code} — ${currency.name}')))
+                        .toList(),
+                    onChanged: (value) => setState(() {
+                      _originalCurrency = value ?? Currency.ars;
+                      if (_originalCurrency == widget.group.referenceCurrency) _exchangeRateController.text = '1';
+                    }),
+                  ),
+                  if (_originalCurrency != widget.group.referenceCurrency) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _exchangeRateController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(labelText: '1 ${_originalCurrency.code} = ? ${widget.group.referenceCurrency.code}', prefixIcon: const Icon(Icons.swap_horiz)),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -175,14 +259,34 @@ class _ExpenseFormSheetState extends State<ExpenseFormSheet> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _pickDate,
                   ),
-                  DropdownButtonFormField<Person>(
-                    initialValue: _payer,
-                    decoration: const InputDecoration(labelText: 'Pagó', prefixIcon: Icon(Icons.person_outline)),
-                    items: _availableMembers
-                        .map((member) => DropdownMenuItem(value: member, child: Text(member.name)))
+                  const Text('Pagaron', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _availablePayers
+                        .map(
+                          (member) => FilterChip(
+                            label: Text(member.name),
+                            selected: _selectedPayerIds.contains(member.id),
+                            onSelected: (selected) => _togglePayer(member, selected),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (value) => setState(() => _payer = value),
                   ),
+                  if (_selectedPayerIds.length > 1) ...[
+                    const SizedBox(height: 12),
+                    ..._availablePayers.where((member) => _selectedPayerIds.contains(member.id)).map(
+                          (member) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: TextField(
+                              controller: _payerAmountControllers.putIfAbsent(member.id, () => TextEditingController()),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(labelText: 'Pagó ${member.name}', prefixText: r'$ '),
+                            ),
+                          ),
+                        ),
+                  ],
                   const SizedBox(height: 20),
                   const Text('Participantes', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),

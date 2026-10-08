@@ -11,6 +11,7 @@ class Groups extends Table {
   DateTimeColumn get creationDate => dateTime()();
   TextColumn get iconName => text().nullable()();
   TextColumn get colorHex => text().nullable()();
+  TextColumn get referenceCurrencyCode => text().withDefault(const Constant('ARS'))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -43,9 +44,23 @@ class Expenses extends Table {
   TextColumn get payerId => text().nullable()();
   IntColumn get splitType => integer()();
   TextColumn get splitDetailsJson => text().nullable()();
+  IntColumn get originalAmountCents => integer().withDefault(const Constant(0))();
+  TextColumn get originalCurrencyCode => text().withDefault(const Constant('ARS'))();
+  TextColumn get referenceCurrencyCode => text().withDefault(const Constant('ARS'))();
+  RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
+}
+
+class ExpensePayers extends Table {
+  TextColumn get expenseId => text().references(Expenses, #id)();
+  TextColumn get personId => text().references(Persons, #id)();
+  IntColumn get amountCents => integer()();
+  TextColumn get currencyCode => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {expenseId, personId};
 }
 
 class ExpenseParticipants extends Table {
@@ -65,14 +80,14 @@ class ExpenseSplits extends Table {
   Set<Column<Object>> get primaryKey => {expenseId, personId};
 }
 
-@DriftDatabase(tables: [Groups, Persons, GroupMembers, Expenses, ExpenseParticipants, ExpenseSplits])
+@DriftDatabase(tables: [Groups, Persons, GroupMembers, Expenses, ExpensePayers, ExpenseParticipants, ExpenseSplits])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'gastos_compartidos'));
 
   AppDatabase.inMemory() : super(openMemoryDatabase());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,6 +97,16 @@ class AppDatabase extends _$AppDatabase {
             await migrator.createTable(expenses);
             await migrator.createTable(expenseParticipants);
             await migrator.createTable(expenseSplits);
+          }
+          if (from < 3) {
+            await migrator.addColumn(expenses, expenses.originalAmountCents);
+            await migrator.addColumn(expenses, expenses.originalCurrencyCode);
+            await migrator.addColumn(expenses, expenses.referenceCurrencyCode);
+            await migrator.addColumn(expenses, expenses.exchangeRate);
+            await migrator.createTable(expensePayers);
+          }
+          if (from < 4) {
+            await migrator.addColumn(groups, groups.referenceCurrencyCode);
           }
         },
       );

@@ -59,6 +59,18 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _referenceCurrencyCodeMeta =
+      const VerificationMeta('referenceCurrencyCode');
+  @override
+  late final GeneratedColumn<String> referenceCurrencyCode =
+      GeneratedColumn<String>(
+        'reference_currency_code',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('ARS'),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -66,6 +78,7 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
     creationDate,
     iconName,
     colorHex,
+    referenceCurrencyCode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -115,6 +128,15 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
         colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
       );
     }
+    if (data.containsKey('reference_currency_code')) {
+      context.handle(
+        _referenceCurrencyCodeMeta,
+        referenceCurrencyCode.isAcceptableOrUnknown(
+          data['reference_currency_code']!,
+          _referenceCurrencyCodeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -144,6 +166,10 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
         DriftSqlType.string,
         data['${effectivePrefix}color_hex'],
       ),
+      referenceCurrencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_currency_code'],
+      )!,
     );
   }
 
@@ -159,12 +185,14 @@ class Group extends DataClass implements Insertable<Group> {
   final DateTime creationDate;
   final String? iconName;
   final String? colorHex;
+  final String referenceCurrencyCode;
   const Group({
     required this.id,
     required this.name,
     required this.creationDate,
     this.iconName,
     this.colorHex,
+    required this.referenceCurrencyCode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -178,6 +206,7 @@ class Group extends DataClass implements Insertable<Group> {
     if (!nullToAbsent || colorHex != null) {
       map['color_hex'] = Variable<String>(colorHex);
     }
+    map['reference_currency_code'] = Variable<String>(referenceCurrencyCode);
     return map;
   }
 
@@ -192,6 +221,7 @@ class Group extends DataClass implements Insertable<Group> {
       colorHex: colorHex == null && nullToAbsent
           ? const Value.absent()
           : Value(colorHex),
+      referenceCurrencyCode: Value(referenceCurrencyCode),
     );
   }
 
@@ -206,6 +236,9 @@ class Group extends DataClass implements Insertable<Group> {
       creationDate: serializer.fromJson<DateTime>(json['creationDate']),
       iconName: serializer.fromJson<String?>(json['iconName']),
       colorHex: serializer.fromJson<String?>(json['colorHex']),
+      referenceCurrencyCode: serializer.fromJson<String>(
+        json['referenceCurrencyCode'],
+      ),
     );
   }
   @override
@@ -217,6 +250,7 @@ class Group extends DataClass implements Insertable<Group> {
       'creationDate': serializer.toJson<DateTime>(creationDate),
       'iconName': serializer.toJson<String?>(iconName),
       'colorHex': serializer.toJson<String?>(colorHex),
+      'referenceCurrencyCode': serializer.toJson<String>(referenceCurrencyCode),
     };
   }
 
@@ -226,12 +260,14 @@ class Group extends DataClass implements Insertable<Group> {
     DateTime? creationDate,
     Value<String?> iconName = const Value.absent(),
     Value<String?> colorHex = const Value.absent(),
+    String? referenceCurrencyCode,
   }) => Group(
     id: id ?? this.id,
     name: name ?? this.name,
     creationDate: creationDate ?? this.creationDate,
     iconName: iconName.present ? iconName.value : this.iconName,
     colorHex: colorHex.present ? colorHex.value : this.colorHex,
+    referenceCurrencyCode: referenceCurrencyCode ?? this.referenceCurrencyCode,
   );
   Group copyWithCompanion(GroupsCompanion data) {
     return Group(
@@ -242,6 +278,9 @@ class Group extends DataClass implements Insertable<Group> {
           : this.creationDate,
       iconName: data.iconName.present ? data.iconName.value : this.iconName,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
+      referenceCurrencyCode: data.referenceCurrencyCode.present
+          ? data.referenceCurrencyCode.value
+          : this.referenceCurrencyCode,
     );
   }
 
@@ -252,13 +291,21 @@ class Group extends DataClass implements Insertable<Group> {
           ..write('name: $name, ')
           ..write('creationDate: $creationDate, ')
           ..write('iconName: $iconName, ')
-          ..write('colorHex: $colorHex')
+          ..write('colorHex: $colorHex, ')
+          ..write('referenceCurrencyCode: $referenceCurrencyCode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, creationDate, iconName, colorHex);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    creationDate,
+    iconName,
+    colorHex,
+    referenceCurrencyCode,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -267,7 +314,8 @@ class Group extends DataClass implements Insertable<Group> {
           other.name == this.name &&
           other.creationDate == this.creationDate &&
           other.iconName == this.iconName &&
-          other.colorHex == this.colorHex);
+          other.colorHex == this.colorHex &&
+          other.referenceCurrencyCode == this.referenceCurrencyCode);
 }
 
 class GroupsCompanion extends UpdateCompanion<Group> {
@@ -276,6 +324,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
   final Value<DateTime> creationDate;
   final Value<String?> iconName;
   final Value<String?> colorHex;
+  final Value<String> referenceCurrencyCode;
   final Value<int> rowid;
   const GroupsCompanion({
     this.id = const Value.absent(),
@@ -283,6 +332,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     this.creationDate = const Value.absent(),
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
+    this.referenceCurrencyCode = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GroupsCompanion.insert({
@@ -291,6 +341,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     required DateTime creationDate,
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
+    this.referenceCurrencyCode = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -301,6 +352,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     Expression<DateTime>? creationDate,
     Expression<String>? iconName,
     Expression<String>? colorHex,
+    Expression<String>? referenceCurrencyCode,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -309,6 +361,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
       if (creationDate != null) 'creation_date': creationDate,
       if (iconName != null) 'icon_name': iconName,
       if (colorHex != null) 'color_hex': colorHex,
+      if (referenceCurrencyCode != null)
+        'reference_currency_code': referenceCurrencyCode,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -319,6 +373,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     Value<DateTime>? creationDate,
     Value<String?>? iconName,
     Value<String?>? colorHex,
+    Value<String>? referenceCurrencyCode,
     Value<int>? rowid,
   }) {
     return GroupsCompanion(
@@ -327,6 +382,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
       creationDate: creationDate ?? this.creationDate,
       iconName: iconName ?? this.iconName,
       colorHex: colorHex ?? this.colorHex,
+      referenceCurrencyCode:
+          referenceCurrencyCode ?? this.referenceCurrencyCode,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -349,6 +406,11 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     if (colorHex.present) {
       map['color_hex'] = Variable<String>(colorHex.value);
     }
+    if (referenceCurrencyCode.present) {
+      map['reference_currency_code'] = Variable<String>(
+        referenceCurrencyCode.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -363,6 +425,7 @@ class GroupsCompanion extends UpdateCompanion<Group> {
           ..write('creationDate: $creationDate, ')
           ..write('iconName: $iconName, ')
           ..write('colorHex: $colorHex, ')
+          ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -997,6 +1060,53 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _originalAmountCentsMeta =
+      const VerificationMeta('originalAmountCents');
+  @override
+  late final GeneratedColumn<int> originalAmountCents = GeneratedColumn<int>(
+    'original_amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _originalCurrencyCodeMeta =
+      const VerificationMeta('originalCurrencyCode');
+  @override
+  late final GeneratedColumn<String> originalCurrencyCode =
+      GeneratedColumn<String>(
+        'original_currency_code',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('ARS'),
+      );
+  static const VerificationMeta _referenceCurrencyCodeMeta =
+      const VerificationMeta('referenceCurrencyCode');
+  @override
+  late final GeneratedColumn<String> referenceCurrencyCode =
+      GeneratedColumn<String>(
+        'reference_currency_code',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('ARS'),
+      );
+  static const VerificationMeta _exchangeRateMeta = const VerificationMeta(
+    'exchangeRate',
+  );
+  @override
+  late final GeneratedColumn<double> exchangeRate = GeneratedColumn<double>(
+    'exchange_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1007,6 +1117,10 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     payerId,
     splitType,
     splitDetailsJson,
+    originalAmountCents,
+    originalCurrencyCode,
+    referenceCurrencyCode,
+    exchangeRate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1083,6 +1197,42 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         ),
       );
     }
+    if (data.containsKey('original_amount_cents')) {
+      context.handle(
+        _originalAmountCentsMeta,
+        originalAmountCents.isAcceptableOrUnknown(
+          data['original_amount_cents']!,
+          _originalAmountCentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('original_currency_code')) {
+      context.handle(
+        _originalCurrencyCodeMeta,
+        originalCurrencyCode.isAcceptableOrUnknown(
+          data['original_currency_code']!,
+          _originalCurrencyCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reference_currency_code')) {
+      context.handle(
+        _referenceCurrencyCodeMeta,
+        referenceCurrencyCode.isAcceptableOrUnknown(
+          data['reference_currency_code']!,
+          _referenceCurrencyCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('exchange_rate')) {
+      context.handle(
+        _exchangeRateMeta,
+        exchangeRate.isAcceptableOrUnknown(
+          data['exchange_rate']!,
+          _exchangeRateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1124,6 +1274,22 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.string,
         data['${effectivePrefix}split_details_json'],
       ),
+      originalAmountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}original_amount_cents'],
+      )!,
+      originalCurrencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_currency_code'],
+      )!,
+      referenceCurrencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_currency_code'],
+      )!,
+      exchangeRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}exchange_rate'],
+      )!,
     );
   }
 
@@ -1142,6 +1308,10 @@ class Expense extends DataClass implements Insertable<Expense> {
   final String? payerId;
   final int splitType;
   final String? splitDetailsJson;
+  final int originalAmountCents;
+  final String originalCurrencyCode;
+  final String referenceCurrencyCode;
+  final double exchangeRate;
   const Expense({
     required this.id,
     required this.groupId,
@@ -1151,6 +1321,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     this.payerId,
     required this.splitType,
     this.splitDetailsJson,
+    required this.originalAmountCents,
+    required this.originalCurrencyCode,
+    required this.referenceCurrencyCode,
+    required this.exchangeRate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1167,6 +1341,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     if (!nullToAbsent || splitDetailsJson != null) {
       map['split_details_json'] = Variable<String>(splitDetailsJson);
     }
+    map['original_amount_cents'] = Variable<int>(originalAmountCents);
+    map['original_currency_code'] = Variable<String>(originalCurrencyCode);
+    map['reference_currency_code'] = Variable<String>(referenceCurrencyCode);
+    map['exchange_rate'] = Variable<double>(exchangeRate);
     return map;
   }
 
@@ -1184,6 +1362,10 @@ class Expense extends DataClass implements Insertable<Expense> {
       splitDetailsJson: splitDetailsJson == null && nullToAbsent
           ? const Value.absent()
           : Value(splitDetailsJson),
+      originalAmountCents: Value(originalAmountCents),
+      originalCurrencyCode: Value(originalCurrencyCode),
+      referenceCurrencyCode: Value(referenceCurrencyCode),
+      exchangeRate: Value(exchangeRate),
     );
   }
 
@@ -1201,6 +1383,16 @@ class Expense extends DataClass implements Insertable<Expense> {
       payerId: serializer.fromJson<String?>(json['payerId']),
       splitType: serializer.fromJson<int>(json['splitType']),
       splitDetailsJson: serializer.fromJson<String?>(json['splitDetailsJson']),
+      originalAmountCents: serializer.fromJson<int>(
+        json['originalAmountCents'],
+      ),
+      originalCurrencyCode: serializer.fromJson<String>(
+        json['originalCurrencyCode'],
+      ),
+      referenceCurrencyCode: serializer.fromJson<String>(
+        json['referenceCurrencyCode'],
+      ),
+      exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
     );
   }
   @override
@@ -1215,6 +1407,10 @@ class Expense extends DataClass implements Insertable<Expense> {
       'payerId': serializer.toJson<String?>(payerId),
       'splitType': serializer.toJson<int>(splitType),
       'splitDetailsJson': serializer.toJson<String?>(splitDetailsJson),
+      'originalAmountCents': serializer.toJson<int>(originalAmountCents),
+      'originalCurrencyCode': serializer.toJson<String>(originalCurrencyCode),
+      'referenceCurrencyCode': serializer.toJson<String>(referenceCurrencyCode),
+      'exchangeRate': serializer.toJson<double>(exchangeRate),
     };
   }
 
@@ -1227,6 +1423,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     Value<String?> payerId = const Value.absent(),
     int? splitType,
     Value<String?> splitDetailsJson = const Value.absent(),
+    int? originalAmountCents,
+    String? originalCurrencyCode,
+    String? referenceCurrencyCode,
+    double? exchangeRate,
   }) => Expense(
     id: id ?? this.id,
     groupId: groupId ?? this.groupId,
@@ -1238,6 +1438,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     splitDetailsJson: splitDetailsJson.present
         ? splitDetailsJson.value
         : this.splitDetailsJson,
+    originalAmountCents: originalAmountCents ?? this.originalAmountCents,
+    originalCurrencyCode: originalCurrencyCode ?? this.originalCurrencyCode,
+    referenceCurrencyCode: referenceCurrencyCode ?? this.referenceCurrencyCode,
+    exchangeRate: exchangeRate ?? this.exchangeRate,
   );
   Expense copyWithCompanion(ExpensesCompanion data) {
     return Expense(
@@ -1253,6 +1457,18 @@ class Expense extends DataClass implements Insertable<Expense> {
       splitDetailsJson: data.splitDetailsJson.present
           ? data.splitDetailsJson.value
           : this.splitDetailsJson,
+      originalAmountCents: data.originalAmountCents.present
+          ? data.originalAmountCents.value
+          : this.originalAmountCents,
+      originalCurrencyCode: data.originalCurrencyCode.present
+          ? data.originalCurrencyCode.value
+          : this.originalCurrencyCode,
+      referenceCurrencyCode: data.referenceCurrencyCode.present
+          ? data.referenceCurrencyCode.value
+          : this.referenceCurrencyCode,
+      exchangeRate: data.exchangeRate.present
+          ? data.exchangeRate.value
+          : this.exchangeRate,
     );
   }
 
@@ -1266,7 +1482,11 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('date: $date, ')
           ..write('payerId: $payerId, ')
           ..write('splitType: $splitType, ')
-          ..write('splitDetailsJson: $splitDetailsJson')
+          ..write('splitDetailsJson: $splitDetailsJson, ')
+          ..write('originalAmountCents: $originalAmountCents, ')
+          ..write('originalCurrencyCode: $originalCurrencyCode, ')
+          ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
+          ..write('exchangeRate: $exchangeRate')
           ..write(')'))
         .toString();
   }
@@ -1281,6 +1501,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     payerId,
     splitType,
     splitDetailsJson,
+    originalAmountCents,
+    originalCurrencyCode,
+    referenceCurrencyCode,
+    exchangeRate,
   );
   @override
   bool operator ==(Object other) =>
@@ -1293,7 +1517,11 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.date == this.date &&
           other.payerId == this.payerId &&
           other.splitType == this.splitType &&
-          other.splitDetailsJson == this.splitDetailsJson);
+          other.splitDetailsJson == this.splitDetailsJson &&
+          other.originalAmountCents == this.originalAmountCents &&
+          other.originalCurrencyCode == this.originalCurrencyCode &&
+          other.referenceCurrencyCode == this.referenceCurrencyCode &&
+          other.exchangeRate == this.exchangeRate);
 }
 
 class ExpensesCompanion extends UpdateCompanion<Expense> {
@@ -1305,6 +1533,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<String?> payerId;
   final Value<int> splitType;
   final Value<String?> splitDetailsJson;
+  final Value<int> originalAmountCents;
+  final Value<String> originalCurrencyCode;
+  final Value<String> referenceCurrencyCode;
+  final Value<double> exchangeRate;
   final Value<int> rowid;
   const ExpensesCompanion({
     this.id = const Value.absent(),
@@ -1315,6 +1547,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.payerId = const Value.absent(),
     this.splitType = const Value.absent(),
     this.splitDetailsJson = const Value.absent(),
+    this.originalAmountCents = const Value.absent(),
+    this.originalCurrencyCode = const Value.absent(),
+    this.referenceCurrencyCode = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExpensesCompanion.insert({
@@ -1326,6 +1562,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.payerId = const Value.absent(),
     required int splitType,
     this.splitDetailsJson = const Value.absent(),
+    this.originalAmountCents = const Value.absent(),
+    this.originalCurrencyCode = const Value.absent(),
+    this.referenceCurrencyCode = const Value.absent(),
+    this.exchangeRate = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        groupId = Value(groupId),
@@ -1342,6 +1582,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<String>? payerId,
     Expression<int>? splitType,
     Expression<String>? splitDetailsJson,
+    Expression<int>? originalAmountCents,
+    Expression<String>? originalCurrencyCode,
+    Expression<String>? referenceCurrencyCode,
+    Expression<double>? exchangeRate,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1353,6 +1597,13 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (payerId != null) 'payer_id': payerId,
       if (splitType != null) 'split_type': splitType,
       if (splitDetailsJson != null) 'split_details_json': splitDetailsJson,
+      if (originalAmountCents != null)
+        'original_amount_cents': originalAmountCents,
+      if (originalCurrencyCode != null)
+        'original_currency_code': originalCurrencyCode,
+      if (referenceCurrencyCode != null)
+        'reference_currency_code': referenceCurrencyCode,
+      if (exchangeRate != null) 'exchange_rate': exchangeRate,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1366,6 +1617,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<String?>? payerId,
     Value<int>? splitType,
     Value<String?>? splitDetailsJson,
+    Value<int>? originalAmountCents,
+    Value<String>? originalCurrencyCode,
+    Value<String>? referenceCurrencyCode,
+    Value<double>? exchangeRate,
     Value<int>? rowid,
   }) {
     return ExpensesCompanion(
@@ -1377,6 +1632,11 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       payerId: payerId ?? this.payerId,
       splitType: splitType ?? this.splitType,
       splitDetailsJson: splitDetailsJson ?? this.splitDetailsJson,
+      originalAmountCents: originalAmountCents ?? this.originalAmountCents,
+      originalCurrencyCode: originalCurrencyCode ?? this.originalCurrencyCode,
+      referenceCurrencyCode:
+          referenceCurrencyCode ?? this.referenceCurrencyCode,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1408,6 +1668,22 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     if (splitDetailsJson.present) {
       map['split_details_json'] = Variable<String>(splitDetailsJson.value);
     }
+    if (originalAmountCents.present) {
+      map['original_amount_cents'] = Variable<int>(originalAmountCents.value);
+    }
+    if (originalCurrencyCode.present) {
+      map['original_currency_code'] = Variable<String>(
+        originalCurrencyCode.value,
+      );
+    }
+    if (referenceCurrencyCode.present) {
+      map['reference_currency_code'] = Variable<String>(
+        referenceCurrencyCode.value,
+      );
+    }
+    if (exchangeRate.present) {
+      map['exchange_rate'] = Variable<double>(exchangeRate.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1425,6 +1701,347 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('payerId: $payerId, ')
           ..write('splitType: $splitType, ')
           ..write('splitDetailsJson: $splitDetailsJson, ')
+          ..write('originalAmountCents: $originalAmountCents, ')
+          ..write('originalCurrencyCode: $originalCurrencyCode, ')
+          ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
+          ..write('exchangeRate: $exchangeRate, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ExpensePayersTable extends ExpensePayers
+    with TableInfo<$ExpensePayersTable, ExpensePayer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExpensePayersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _expenseIdMeta = const VerificationMeta(
+    'expenseId',
+  );
+  @override
+  late final GeneratedColumn<String> expenseId = GeneratedColumn<String>(
+    'expense_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES expenses (id)',
+    ),
+  );
+  static const VerificationMeta _personIdMeta = const VerificationMeta(
+    'personId',
+  );
+  @override
+  late final GeneratedColumn<String> personId = GeneratedColumn<String>(
+    'person_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES persons (id)',
+    ),
+  );
+  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
+    'amountCents',
+  );
+  @override
+  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
+    'amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    expenseId,
+    personId,
+    amountCents,
+    currencyCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'expense_payers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExpensePayer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('expense_id')) {
+      context.handle(
+        _expenseIdMeta,
+        expenseId.isAcceptableOrUnknown(data['expense_id']!, _expenseIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expenseIdMeta);
+    }
+    if (data.containsKey('person_id')) {
+      context.handle(
+        _personIdMeta,
+        personId.isAcceptableOrUnknown(data['person_id']!, _personIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personIdMeta);
+    }
+    if (data.containsKey('amount_cents')) {
+      context.handle(
+        _amountCentsMeta,
+        amountCents.isAcceptableOrUnknown(
+          data['amount_cents']!,
+          _amountCentsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountCentsMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {expenseId, personId};
+  @override
+  ExpensePayer map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExpensePayer(
+      expenseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expense_id'],
+      )!,
+      personId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}person_id'],
+      )!,
+      amountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_cents'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+    );
+  }
+
+  @override
+  $ExpensePayersTable createAlias(String alias) {
+    return $ExpensePayersTable(attachedDatabase, alias);
+  }
+}
+
+class ExpensePayer extends DataClass implements Insertable<ExpensePayer> {
+  final String expenseId;
+  final String personId;
+  final int amountCents;
+  final String currencyCode;
+  const ExpensePayer({
+    required this.expenseId,
+    required this.personId,
+    required this.amountCents,
+    required this.currencyCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['expense_id'] = Variable<String>(expenseId);
+    map['person_id'] = Variable<String>(personId);
+    map['amount_cents'] = Variable<int>(amountCents);
+    map['currency_code'] = Variable<String>(currencyCode);
+    return map;
+  }
+
+  ExpensePayersCompanion toCompanion(bool nullToAbsent) {
+    return ExpensePayersCompanion(
+      expenseId: Value(expenseId),
+      personId: Value(personId),
+      amountCents: Value(amountCents),
+      currencyCode: Value(currencyCode),
+    );
+  }
+
+  factory ExpensePayer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExpensePayer(
+      expenseId: serializer.fromJson<String>(json['expenseId']),
+      personId: serializer.fromJson<String>(json['personId']),
+      amountCents: serializer.fromJson<int>(json['amountCents']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'expenseId': serializer.toJson<String>(expenseId),
+      'personId': serializer.toJson<String>(personId),
+      'amountCents': serializer.toJson<int>(amountCents),
+      'currencyCode': serializer.toJson<String>(currencyCode),
+    };
+  }
+
+  ExpensePayer copyWith({
+    String? expenseId,
+    String? personId,
+    int? amountCents,
+    String? currencyCode,
+  }) => ExpensePayer(
+    expenseId: expenseId ?? this.expenseId,
+    personId: personId ?? this.personId,
+    amountCents: amountCents ?? this.amountCents,
+    currencyCode: currencyCode ?? this.currencyCode,
+  );
+  ExpensePayer copyWithCompanion(ExpensePayersCompanion data) {
+    return ExpensePayer(
+      expenseId: data.expenseId.present ? data.expenseId.value : this.expenseId,
+      personId: data.personId.present ? data.personId.value : this.personId,
+      amountCents: data.amountCents.present
+          ? data.amountCents.value
+          : this.amountCents,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExpensePayer(')
+          ..write('expenseId: $expenseId, ')
+          ..write('personId: $personId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('currencyCode: $currencyCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(expenseId, personId, amountCents, currencyCode);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExpensePayer &&
+          other.expenseId == this.expenseId &&
+          other.personId == this.personId &&
+          other.amountCents == this.amountCents &&
+          other.currencyCode == this.currencyCode);
+}
+
+class ExpensePayersCompanion extends UpdateCompanion<ExpensePayer> {
+  final Value<String> expenseId;
+  final Value<String> personId;
+  final Value<int> amountCents;
+  final Value<String> currencyCode;
+  final Value<int> rowid;
+  const ExpensePayersCompanion({
+    this.expenseId = const Value.absent(),
+    this.personId = const Value.absent(),
+    this.amountCents = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExpensePayersCompanion.insert({
+    required String expenseId,
+    required String personId,
+    required int amountCents,
+    required String currencyCode,
+    this.rowid = const Value.absent(),
+  }) : expenseId = Value(expenseId),
+       personId = Value(personId),
+       amountCents = Value(amountCents),
+       currencyCode = Value(currencyCode);
+  static Insertable<ExpensePayer> custom({
+    Expression<String>? expenseId,
+    Expression<String>? personId,
+    Expression<int>? amountCents,
+    Expression<String>? currencyCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (expenseId != null) 'expense_id': expenseId,
+      if (personId != null) 'person_id': personId,
+      if (amountCents != null) 'amount_cents': amountCents,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExpensePayersCompanion copyWith({
+    Value<String>? expenseId,
+    Value<String>? personId,
+    Value<int>? amountCents,
+    Value<String>? currencyCode,
+    Value<int>? rowid,
+  }) {
+    return ExpensePayersCompanion(
+      expenseId: expenseId ?? this.expenseId,
+      personId: personId ?? this.personId,
+      amountCents: amountCents ?? this.amountCents,
+      currencyCode: currencyCode ?? this.currencyCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (expenseId.present) {
+      map['expense_id'] = Variable<String>(expenseId.value);
+    }
+    if (personId.present) {
+      map['person_id'] = Variable<String>(personId.value);
+    }
+    if (amountCents.present) {
+      map['amount_cents'] = Variable<int>(amountCents.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExpensePayersCompanion(')
+          ..write('expenseId: $expenseId, ')
+          ..write('personId: $personId, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('currencyCode: $currencyCode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1933,6 +2550,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PersonsTable persons = $PersonsTable(this);
   late final $GroupMembersTable groupMembers = $GroupMembersTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
+  late final $ExpensePayersTable expensePayers = $ExpensePayersTable(this);
   late final $ExpenseParticipantsTable expenseParticipants =
       $ExpenseParticipantsTable(this);
   late final $ExpenseSplitsTable expenseSplits = $ExpenseSplitsTable(this);
@@ -1945,6 +2563,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     persons,
     groupMembers,
     expenses,
+    expensePayers,
     expenseParticipants,
     expenseSplits,
   ];
@@ -1957,6 +2576,7 @@ typedef $$GroupsTableCreateCompanionBuilder =
       required DateTime creationDate,
       Value<String?> iconName,
       Value<String?> colorHex,
+      Value<String> referenceCurrencyCode,
       Value<int> rowid,
     });
 typedef $$GroupsTableUpdateCompanionBuilder =
@@ -1966,6 +2586,7 @@ typedef $$GroupsTableUpdateCompanionBuilder =
       Value<DateTime> creationDate,
       Value<String?> iconName,
       Value<String?> colorHex,
+      Value<String> referenceCurrencyCode,
       Value<int> rowid,
     });
 
@@ -2042,6 +2663,11 @@ class $$GroupsTableFilterComposer
 
   ColumnFilters<String> get colorHex => $composableBuilder(
     column: $table.colorHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2129,6 +2755,11 @@ class $$GroupsTableOrderingComposer
     column: $table.colorHex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GroupsTableAnnotationComposer
@@ -2156,6 +2787,11 @@ class $$GroupsTableAnnotationComposer
 
   GeneratedColumn<String> get colorHex =>
       $composableBuilder(column: $table.colorHex, builder: (column) => column);
+
+  GeneratedColumn<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
+    builder: (column) => column,
+  );
 
   Expression<T> groupMembersRefs<T extends Object>(
     Expression<T> Function($$GroupMembersTableAnnotationComposer a) f,
@@ -2241,6 +2877,7 @@ class $$GroupsTableTableManager
                 Value<DateTime> creationDate = const Value.absent(),
                 Value<String?> iconName = const Value.absent(),
                 Value<String?> colorHex = const Value.absent(),
+                Value<String> referenceCurrencyCode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GroupsCompanion(
                 id: id,
@@ -2248,6 +2885,7 @@ class $$GroupsTableTableManager
                 creationDate: creationDate,
                 iconName: iconName,
                 colorHex: colorHex,
+                referenceCurrencyCode: referenceCurrencyCode,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2257,6 +2895,7 @@ class $$GroupsTableTableManager
                 required DateTime creationDate,
                 Value<String?> iconName = const Value.absent(),
                 Value<String?> colorHex = const Value.absent(),
+                Value<String> referenceCurrencyCode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GroupsCompanion.insert(
                 id: id,
@@ -2264,6 +2903,7 @@ class $$GroupsTableTableManager
                 creationDate: creationDate,
                 iconName: iconName,
                 colorHex: colorHex,
+                referenceCurrencyCode: referenceCurrencyCode,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -2384,6 +3024,24 @@ final class $$PersonsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$ExpensePayersTable, List<ExpensePayer>>
+  _expensePayersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.expensePayers,
+    aliasName: 'persons__id__expense_payers__person_id',
+  );
+
+  $$ExpensePayersTableProcessedTableManager get expensePayersRefs {
+    final manager = $$ExpensePayersTableTableManager(
+      $_db,
+      $_db.expensePayers,
+    ).filter((f) => f.personId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_expensePayersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<
     $ExpenseParticipantsTable,
     List<ExpenseParticipant>
@@ -2472,6 +3130,31 @@ class $$PersonsTableFilterComposer
           }) => $$GroupMembersTableFilterComposer(
             $db: $db,
             $table: $db.groupMembers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> expensePayersRefs(
+    Expression<bool> Function($$ExpensePayersTableFilterComposer f) f,
+  ) {
+    final $$ExpensePayersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.expensePayers,
+      getReferencedColumn: (t) => t.personId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensePayersTableFilterComposer(
+            $db: $db,
+            $table: $db.expensePayers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2612,6 +3295,31 @@ class $$PersonsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> expensePayersRefs<T extends Object>(
+    Expression<T> Function($$ExpensePayersTableAnnotationComposer a) f,
+  ) {
+    final $$ExpensePayersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.expensePayers,
+      getReferencedColumn: (t) => t.personId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensePayersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.expensePayers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> expenseParticipantsRefs<T extends Object>(
     Expression<T> Function($$ExpenseParticipantsTableAnnotationComposer a) f,
   ) {
@@ -2679,6 +3387,7 @@ class $$PersonsTableTableManager
           Person,
           PrefetchHooks Function({
             bool groupMembersRefs,
+            bool expensePayersRefs,
             bool expenseParticipantsRefs,
             bool expenseSplitsRefs,
           })
@@ -2733,6 +3442,7 @@ class $$PersonsTableTableManager
           prefetchHooksCallback:
               ({
                 groupMembersRefs = false,
+                expensePayersRefs = false,
                 expenseParticipantsRefs = false,
                 expenseSplitsRefs = false,
               }) {
@@ -2740,6 +3450,7 @@ class $$PersonsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (groupMembersRefs) db.groupMembers,
+                    if (expensePayersRefs) db.expensePayers,
                     if (expenseParticipantsRefs) db.expenseParticipants,
                     if (expenseSplitsRefs) db.expenseSplits,
                   ],
@@ -2761,6 +3472,27 @@ class $$PersonsTableTableManager
                                 table,
                                 p0,
                               ).groupMembersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.personId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (expensePayersRefs)
+                        await $_getPrefetchedData<
+                          Person,
+                          $PersonsTable,
+                          ExpensePayer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PersonsTableReferences
+                              ._expensePayersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PersonsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).expensePayersRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.personId == item.id,
@@ -2831,6 +3563,7 @@ typedef $$PersonsTableProcessedTableManager =
       Person,
       PrefetchHooks Function({
         bool groupMembersRefs,
+        bool expensePayersRefs,
         bool expenseParticipantsRefs,
         bool expenseSplitsRefs,
       })
@@ -3191,6 +3924,10 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       Value<String?> payerId,
       required int splitType,
       Value<String?> splitDetailsJson,
+      Value<int> originalAmountCents,
+      Value<String> originalCurrencyCode,
+      Value<String> referenceCurrencyCode,
+      Value<double> exchangeRate,
       Value<int> rowid,
     });
 typedef $$ExpensesTableUpdateCompanionBuilder =
@@ -3203,6 +3940,10 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<String?> payerId,
       Value<int> splitType,
       Value<String?> splitDetailsJson,
+      Value<int> originalAmountCents,
+      Value<String> originalCurrencyCode,
+      Value<String> referenceCurrencyCode,
+      Value<double> exchangeRate,
       Value<int> rowid,
     });
 
@@ -3224,6 +3965,24 @@ final class $$ExpensesTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ExpensePayersTable, List<ExpensePayer>>
+  _expensePayersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.expensePayers,
+    aliasName: 'expenses__id__expense_payers__expense_id',
+  );
+
+  $$ExpensePayersTableProcessedTableManager get expensePayersRefs {
+    final manager = $$ExpensePayersTableTableManager(
+      $_db,
+      $_db.expensePayers,
+    ).filter((f) => f.expenseId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_expensePayersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -3314,6 +4073,26 @@ class $$ExpensesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get originalAmountCents => $composableBuilder(
+    column: $table.originalAmountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalCurrencyCode => $composableBuilder(
+    column: $table.originalCurrencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get exchangeRate => $composableBuilder(
+    column: $table.exchangeRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$GroupsTableFilterComposer get groupId {
     final $$GroupsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -3335,6 +4114,31 @@ class $$ExpensesTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> expensePayersRefs(
+    Expression<bool> Function($$ExpensePayersTableFilterComposer f) f,
+  ) {
+    final $$ExpensePayersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.expensePayers,
+      getReferencedColumn: (t) => t.expenseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensePayersTableFilterComposer(
+            $db: $db,
+            $table: $db.expensePayers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> expenseParticipantsRefs(
@@ -3432,6 +4236,26 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get originalAmountCents => $composableBuilder(
+    column: $table.originalAmountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originalCurrencyCode => $composableBuilder(
+    column: $table.originalCurrencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get exchangeRate => $composableBuilder(
+    column: $table.exchangeRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$GroupsTableOrderingComposer get groupId {
     final $$GroupsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3490,6 +4314,26 @@ class $$ExpensesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get originalAmountCents => $composableBuilder(
+    column: $table.originalAmountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get originalCurrencyCode => $composableBuilder(
+    column: $table.originalCurrencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get referenceCurrencyCode => $composableBuilder(
+    column: $table.referenceCurrencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get exchangeRate => $composableBuilder(
+    column: $table.exchangeRate,
+    builder: (column) => column,
+  );
+
   $$GroupsTableAnnotationComposer get groupId {
     final $$GroupsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -3511,6 +4355,31 @@ class $$ExpensesTableAnnotationComposer
           ),
     );
     return composer;
+  }
+
+  Expression<T> expensePayersRefs<T extends Object>(
+    Expression<T> Function($$ExpensePayersTableAnnotationComposer a) f,
+  ) {
+    final $$ExpensePayersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.expensePayers,
+      getReferencedColumn: (t) => t.expenseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensePayersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.expensePayers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<T> expenseParticipantsRefs<T extends Object>(
@@ -3580,6 +4449,7 @@ class $$ExpensesTableTableManager
           Expense,
           PrefetchHooks Function({
             bool groupId,
+            bool expensePayersRefs,
             bool expenseParticipantsRefs,
             bool expenseSplitsRefs,
           })
@@ -3605,6 +4475,10 @@ class $$ExpensesTableTableManager
                 Value<String?> payerId = const Value.absent(),
                 Value<int> splitType = const Value.absent(),
                 Value<String?> splitDetailsJson = const Value.absent(),
+                Value<int> originalAmountCents = const Value.absent(),
+                Value<String> originalCurrencyCode = const Value.absent(),
+                Value<String> referenceCurrencyCode = const Value.absent(),
+                Value<double> exchangeRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion(
                 id: id,
@@ -3615,6 +4489,10 @@ class $$ExpensesTableTableManager
                 payerId: payerId,
                 splitType: splitType,
                 splitDetailsJson: splitDetailsJson,
+                originalAmountCents: originalAmountCents,
+                originalCurrencyCode: originalCurrencyCode,
+                referenceCurrencyCode: referenceCurrencyCode,
+                exchangeRate: exchangeRate,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3627,6 +4505,10 @@ class $$ExpensesTableTableManager
                 Value<String?> payerId = const Value.absent(),
                 required int splitType,
                 Value<String?> splitDetailsJson = const Value.absent(),
+                Value<int> originalAmountCents = const Value.absent(),
+                Value<String> originalCurrencyCode = const Value.absent(),
+                Value<String> referenceCurrencyCode = const Value.absent(),
+                Value<double> exchangeRate = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion.insert(
                 id: id,
@@ -3637,6 +4519,10 @@ class $$ExpensesTableTableManager
                 payerId: payerId,
                 splitType: splitType,
                 splitDetailsJson: splitDetailsJson,
+                originalAmountCents: originalAmountCents,
+                originalCurrencyCode: originalCurrencyCode,
+                referenceCurrencyCode: referenceCurrencyCode,
+                exchangeRate: exchangeRate,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -3650,12 +4536,14 @@ class $$ExpensesTableTableManager
           prefetchHooksCallback:
               ({
                 groupId = false,
+                expensePayersRefs = false,
                 expenseParticipantsRefs = false,
                 expenseSplitsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (expensePayersRefs) db.expensePayers,
                     if (expenseParticipantsRefs) db.expenseParticipants,
                     if (expenseSplitsRefs) db.expenseSplits,
                   ],
@@ -3693,6 +4581,27 @@ class $$ExpensesTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (expensePayersRefs)
+                        await $_getPrefetchedData<
+                          Expense,
+                          $ExpensesTable,
+                          ExpensePayer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ExpensesTableReferences
+                              ._expensePayersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ExpensesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).expensePayersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.expenseId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (expenseParticipantsRefs)
                         await $_getPrefetchedData<
                           Expense,
@@ -3757,9 +4666,402 @@ typedef $$ExpensesTableProcessedTableManager =
       Expense,
       PrefetchHooks Function({
         bool groupId,
+        bool expensePayersRefs,
         bool expenseParticipantsRefs,
         bool expenseSplitsRefs,
       })
+    >;
+typedef $$ExpensePayersTableCreateCompanionBuilder =
+    ExpensePayersCompanion Function({
+      required String expenseId,
+      required String personId,
+      required int amountCents,
+      required String currencyCode,
+      Value<int> rowid,
+    });
+typedef $$ExpensePayersTableUpdateCompanionBuilder =
+    ExpensePayersCompanion Function({
+      Value<String> expenseId,
+      Value<String> personId,
+      Value<int> amountCents,
+      Value<String> currencyCode,
+      Value<int> rowid,
+    });
+
+final class $$ExpensePayersTableReferences
+    extends BaseReferences<_$AppDatabase, $ExpensePayersTable, ExpensePayer> {
+  $$ExpensePayersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ExpensesTable _expenseIdTable(_$AppDatabase db) =>
+      db.expenses.createAlias('expense_payers__expense_id__expenses__id');
+
+  $$ExpensesTableProcessedTableManager get expenseId {
+    final $_column = $_itemColumn<String>('expense_id')!;
+
+    final manager = $$ExpensesTableTableManager(
+      $_db,
+      $_db.expenses,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_expenseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PersonsTable _personIdTable(_$AppDatabase db) =>
+      db.persons.createAlias('expense_payers__person_id__persons__id');
+
+  $$PersonsTableProcessedTableManager get personId {
+    final $_column = $_itemColumn<String>('person_id')!;
+
+    final manager = $$PersonsTableTableManager(
+      $_db,
+      $_db.persons,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_personIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ExpensePayersTableFilterComposer
+    extends Composer<_$AppDatabase, $ExpensePayersTable> {
+  $$ExpensePayersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ExpensesTableFilterComposer get expenseId {
+    final $$ExpensesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.expenseId,
+      referencedTable: $db.expenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensesTableFilterComposer(
+            $db: $db,
+            $table: $db.expenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PersonsTableFilterComposer get personId {
+    final $$PersonsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personId,
+      referencedTable: $db.persons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonsTableFilterComposer(
+            $db: $db,
+            $table: $db.persons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExpensePayersTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExpensePayersTable> {
+  $$ExpensePayersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ExpensesTableOrderingComposer get expenseId {
+    final $$ExpensesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.expenseId,
+      referencedTable: $db.expenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensesTableOrderingComposer(
+            $db: $db,
+            $table: $db.expenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PersonsTableOrderingComposer get personId {
+    final $$PersonsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personId,
+      referencedTable: $db.persons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonsTableOrderingComposer(
+            $db: $db,
+            $table: $db.persons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExpensePayersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExpensePayersTable> {
+  $$ExpensePayersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  $$ExpensesTableAnnotationComposer get expenseId {
+    final $$ExpensesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.expenseId,
+      referencedTable: $db.expenses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExpensesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.expenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PersonsTableAnnotationComposer get personId {
+    final $$PersonsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.personId,
+      referencedTable: $db.persons,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.persons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExpensePayersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExpensePayersTable,
+          ExpensePayer,
+          $$ExpensePayersTableFilterComposer,
+          $$ExpensePayersTableOrderingComposer,
+          $$ExpensePayersTableAnnotationComposer,
+          $$ExpensePayersTableCreateCompanionBuilder,
+          $$ExpensePayersTableUpdateCompanionBuilder,
+          (ExpensePayer, $$ExpensePayersTableReferences),
+          ExpensePayer,
+          PrefetchHooks Function({bool expenseId, bool personId})
+        > {
+  $$ExpensePayersTableTableManager(_$AppDatabase db, $ExpensePayersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExpensePayersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExpensePayersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExpensePayersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> expenseId = const Value.absent(),
+                Value<String> personId = const Value.absent(),
+                Value<int> amountCents = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExpensePayersCompanion(
+                expenseId: expenseId,
+                personId: personId,
+                amountCents: amountCents,
+                currencyCode: currencyCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String expenseId,
+                required String personId,
+                required int amountCents,
+                required String currencyCode,
+                Value<int> rowid = const Value.absent(),
+              }) => ExpensePayersCompanion.insert(
+                expenseId: expenseId,
+                personId: personId,
+                amountCents: amountCents,
+                currencyCode: currencyCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ExpensePayersTable, ExpensePayer>(table),
+                  $$ExpensePayersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({expenseId = false, personId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (expenseId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.expenseId,
+                                referencedTable: $$ExpensePayersTableReferences
+                                    ._expenseIdTable(db),
+                                referencedColumn: $$ExpensePayersTableReferences
+                                    ._expenseIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (personId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.personId,
+                                referencedTable: $$ExpensePayersTableReferences
+                                    ._personIdTable(db),
+                                referencedColumn: $$ExpensePayersTableReferences
+                                    ._personIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ExpensePayersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExpensePayersTable,
+      ExpensePayer,
+      $$ExpensePayersTableFilterComposer,
+      $$ExpensePayersTableOrderingComposer,
+      $$ExpensePayersTableAnnotationComposer,
+      $$ExpensePayersTableCreateCompanionBuilder,
+      $$ExpensePayersTableUpdateCompanionBuilder,
+      (ExpensePayer, $$ExpensePayersTableReferences),
+      ExpensePayer,
+      PrefetchHooks Function({bool expenseId, bool personId})
     >;
 typedef $$ExpenseParticipantsTableCreateCompanionBuilder =
     ExpenseParticipantsCompanion Function({
@@ -4511,6 +5813,8 @@ class $AppDatabaseManager {
       $$GroupMembersTableTableManager(_db, _db.groupMembers);
   $$ExpensesTableTableManager get expenses =>
       $$ExpensesTableTableManager(_db, _db.expenses);
+  $$ExpensePayersTableTableManager get expensePayers =>
+      $$ExpensePayersTableTableManager(_db, _db.expensePayers);
   $$ExpenseParticipantsTableTableManager get expenseParticipants =>
       $$ExpenseParticipantsTableTableManager(_db, _db.expenseParticipants);
   $$ExpenseSplitsTableTableManager get expenseSplits =>

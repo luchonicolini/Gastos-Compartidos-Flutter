@@ -5,13 +5,13 @@
 - [x] Definir contrato de persistencia local y comparar opciones compatibles con Flutter.
 - [ ] Reorganizar el proyecto en capas `domain`, `data`, `features` y `shared`.
 - [x] Agregar estado de miembro archivado y reglas de conservación histórica.
-- [ ] Extraer validaciones y cálculos de dominio en servicios testeables.
-- [ ] Crear configuración de moneda con ARS y extensión prevista para BRL.
+- [x] Extraer validaciones y cálculos de dominio en servicios testeables.
+- [x] Crear configuración de moneda con ARS y extensión prevista para BRL.
 - [ ] Agregar repositorios locales para grupos, miembros, gastos y liquidaciones.
-- [ ] Crear value object de dinero exacto en unidades mínimas.
-- [ ] Crear modelo de moneda, moneda de referencia y tipo de cambio.
-- [ ] Adaptar gastos para múltiples pagadores sin perder el importe original.
-- [ ] Agregar tests exhaustivos de redondeo y suma exacta.
+- [x] Crear value object de dinero exacto en unidades mínimas.
+- [x] Crear modelo de moneda, moneda de referencia y tipo de cambio.
+- [x] Adaptar gastos para múltiples pagadores sin perder el importe original.
+- [x] Agregar tests exhaustivos de redondeo y suma exacta.
 
 ## Checkpoint — Fundaciones
 
