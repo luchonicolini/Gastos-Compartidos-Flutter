@@ -256,67 +256,71 @@ class _GroupCard extends StatelessWidget {
     final activeMembers = group.members
         .where((member) => !member.isArchived)
         .length;
+    final memberLabel =
+        '$activeMembers ${activeMembers == 1 ? 'miembro' : 'miembros'}';
     final colors = Theme.of(context).colorScheme;
     final tokens = context.tokens;
 
     return Card(
-      child: AppPressable(
-        borderRadius: BorderRadius.circular(tokens.radiusCard),
-        onTap: onTap,
-        semanticLabel: '${group.name}, abrir grupo',
-        child: Semantics(
-          button: true,
-          label: '${group.name}, $activeMembers miembros',
-          hint: 'Abrir grupo',
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: tokens.surfaceSecondary,
-                  child: Icon(Icons.group_outlined, color: tokens.action),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        group.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: AppPressable(
+                borderRadius: BorderRadius.circular(tokens.radiusCard),
+                onTap: onTap,
+                semanticLabel: '${group.name}, $memberLabel, abrir grupo',
+                onTapHint: 'Abrir grupo',
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: tokens.surfaceSecondary,
+                      child: Icon(Icons.group_outlined, color: tokens.action),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            group.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            memberLabel,
+                            style: TextStyle(
+                              color: colors.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$activeMembers ${activeMembers == 1 ? 'miembro' : 'miembros'}',
-                        style: TextStyle(
-                          color: colors.onSurfaceVariant,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  tooltip: 'Acciones para ${group.name}',
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit();
-                    if (value == 'delete') onDelete();
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Editar')),
-                    PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                    ),
+                    Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
                   ],
                 ),
-                Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+              ),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Acciones para ${group.name}',
+              onSelected: (value) {
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('Editar')),
+                PopupMenuItem(value: 'delete', child: Text('Eliminar')),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

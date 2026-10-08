@@ -113,4 +113,28 @@ void main() {
     expect(find.text('Pagos registrados'), findsOneWidget);
     expect(find.text('Viaje saldado'), findsOneWidget);
   });
+
+  testWidgets('expone acciones separadas para lector de pantalla', (
+    tester,
+  ) async {
+    final member = Person(id: 'accessibility-member', name: 'Ana');
+    await LocalGroupRepository(appDatabase).save(
+      Group(
+        id: 'accessibility-group',
+        name: 'Viaje accesible',
+        members: [member],
+      ),
+    );
+
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    await tester.pumpWidget(GastosCompartidosApp(database: appDatabase));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.bySemanticsLabel('Viaje accesible, 1 miembro, abrir grupo'),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Acciones para Viaje accesible'), findsOneWidget);
+  });
 }

@@ -8,6 +8,7 @@ class AppPressable extends StatefulWidget {
     required this.child,
     this.onPressed,
     this.semanticLabel,
+    this.onTapHint,
     this.borderRadius,
     this.pressScale = 0.985,
   });
@@ -15,6 +16,7 @@ class AppPressable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
   final String? semanticLabel;
+  final String? onTapHint;
   final BorderRadius? borderRadius;
   final double pressScale;
 
@@ -43,6 +45,8 @@ class _AppPressableState extends State<AppPressable> {
       button: interactive,
       enabled: interactive,
       label: widget.semanticLabel,
+      onTap: widget.onPressed,
+      onTapHint: widget.onTapHint,
       child: FocusableActionDetector(
         enabled: interactive,
         child: GestureDetector(
