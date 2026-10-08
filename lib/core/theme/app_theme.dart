@@ -1,49 +1,91 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  static const _seedColor = Color(0xFF2563EB);
+  static const _lightBackground = Color(0xFFF6F7FB);
+  static const _darkBackground = Color(0xFF101216);
+
+  static ThemeData get lightTheme => _buildTheme(Brightness.light);
+
+  static ThemeData get darkTheme => _buildTheme(Brightness.dark);
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _seedColor,
+      brightness: brightness,
+      surface: isDark ? _darkBackground : _lightBackground,
+    );
+    final textTheme = _textTheme(colorScheme);
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2563EB),
-        brightness: Brightness.light,
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: colorScheme.surface,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        centerTitle: false,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: textTheme.headlineSmall,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       cardTheme: CardThemeData(
         elevation: 0,
+        margin: EdgeInsets.zero,
+        color: colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
       ),
-      appBarTheme: const AppBarTheme(
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        iconColor: colorScheme.onSurfaceVariant,
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      dividerTheme: DividerThemeData(color: colorScheme.outlineVariant),
     );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF3B82F6),
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF0F172A),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF1E293B)),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+  static TextTheme _textTheme(ColorScheme colorScheme) {
+    return Typography.material2021().black.apply(
+      bodyColor: colorScheme.onSurface,
+      displayColor: colorScheme.onSurface,
     );
   }
 }

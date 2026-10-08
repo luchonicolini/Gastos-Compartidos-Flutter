@@ -22,8 +22,8 @@ class GastosCompartidosApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: HomeScreen(repository: LocalGroupRepository(database)),
     );
   }
 }
-

@@ -54,10 +54,11 @@
 
 ## Fase 5 — Diseño y publicación
 
-- [ ] Aplicar sistema visual Apple-inspired.
-- [ ] Revisar navegación, sheets, gestos y safe areas.
-- [ ] Revisar modo oscuro, accesibilidad y Reduce Motion.
-- [ ] Adaptar layouts para teléfonos y tablets.
+- [x] Aplicar sistema visual Apple-inspired inicial con tokens Material 3.
+- [x] Revisar navegación, sheets y safe areas del flujo existente.
+- [x] Mejorar contraste y soporte de modo oscuro en las pantallas principales.
+- [x] Adaptar lista de grupos y detalle para teléfonos, tablets y ventanas amplias.
+- [ ] Revisar accesibilidad completa y Reduce Motion.
 - [ ] Configurar identidad Android y firma de release.
 - [ ] Generar build de prueba para Google Play Store.
 - [ ] Ejecutar checklist de publicación.

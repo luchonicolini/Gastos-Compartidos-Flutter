@@ -250,151 +250,170 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        children: [
-          _SummaryCard(group: _group),
-          const SizedBox(height: 24),
-          Text(
-            '¿Cómo vamos?',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          if (_group.members.isEmpty)
-            const _InfoTile(
-              icon: Icons.insights_outlined,
-              text: 'Agregá miembros para ver balances.',
-            )
-          else if (_group.expenses.isEmpty)
-            const _InfoTile(
-              icon: Icons.insights_outlined,
-              text: 'Agregá un gasto para calcular balances.',
-            )
-          else ...[
-            if (isSettled)
-              const _SettledCard()
-            else
-              ...balances.map(
-                (balance) => _BalanceTile(
-                  balance: balance,
-                  currency: _group.referenceCurrency,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding = constraints.maxWidth >= 720 ? 32.0 : 16.0;
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  12,
+                  horizontalPadding,
+                  100,
                 ),
+                children: [
+                  _SummaryCard(group: _group),
+                  const SizedBox(height: 24),
+                  Text(
+                    '¿Cómo vamos?',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (_group.members.isEmpty)
+                    const _InfoTile(
+                      icon: Icons.insights_outlined,
+                      text: 'Agregá miembros para ver balances.',
+                    )
+                  else if (_group.expenses.isEmpty)
+                    const _InfoTile(
+                      icon: Icons.insights_outlined,
+                      text: 'Agregá un gasto para calcular balances.',
+                    )
+                  else ...[
+                    if (isSettled)
+                      const _SettledCard()
+                    else
+                      ...balances.map(
+                        (balance) => _BalanceTile(
+                          balance: balance,
+                          currency: _group.referenceCurrency,
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Pagos sugeridos',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (pendingSettlements.isEmpty)
+                      const _InfoTile(
+                        icon: Icons.check_circle_outline,
+                        text: 'No hay pagos pendientes.',
+                      )
+                    else
+                      ...pendingSettlements.map(
+                        (settlement) => _SuggestedSettlementTile(
+                          settlement: settlement,
+                          onConfirm: () => _confirmSettlement(settlement),
+                        ),
+                      ),
+                  ],
+                  if (_group.settlementPayments.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Pagos registrados',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._group.settlementPayments.map(
+                      (payment) => _SettlementHistoryTile(
+                        payment: payment,
+                        onDelete: () => _deleteSettlement(payment),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Miembros',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${activeMembers.length} activos',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (activeMembers.isEmpty)
+                    const _InfoTile(
+                      icon: Icons.person_off_outlined,
+                      text: 'No hay miembros activos.',
+                    )
+                  else
+                    ...activeMembers.map(
+                      (member) => _MemberTile(
+                        member: member,
+                        onToggle: () => _toggleArchive(member),
+                      ),
+                    ),
+                  if (archivedMembers.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      'Archivados',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...archivedMembers.map(
+                      (member) => _MemberTile(
+                        member: member,
+                        onToggle: () => _toggleArchive(member),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Gastos',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_group.expenses.length}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_group.expenses.isEmpty)
+                    const _InfoTile(
+                      icon: Icons.receipt_long_outlined,
+                      text: 'Todavía no hay gastos.',
+                    )
+                  else
+                    ..._group.expenses.map(
+                      (expense) => _ExpenseTile(
+                        expense: expense,
+                        onEdit: () => _editExpense(expense),
+                        onDelete: () => _deleteExpense(expense),
+                      ),
+                    ),
+                ],
               ),
-            const SizedBox(height: 16),
-            Text(
-              'Pagos sugeridos',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            if (pendingSettlements.isEmpty)
-              const _InfoTile(
-                icon: Icons.check_circle_outline,
-                text: 'No hay pagos pendientes.',
-              )
-            else
-              ...pendingSettlements.map(
-                (settlement) => _SuggestedSettlementTile(
-                  settlement: settlement,
-                  onConfirm: () => _confirmSettlement(settlement),
-                ),
-              ),
-          ],
-          if (_group.settlementPayments.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              'Pagos registrados',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ..._group.settlementPayments.map(
-              (payment) => _SettlementHistoryTile(
-                payment: payment,
-                onDelete: () => _deleteSettlement(payment),
-              ),
-            ),
-          ],
-          const SizedBox(height: 28),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Miembros',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '${activeMembers.length} activos',
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (activeMembers.isEmpty)
-            const _InfoTile(
-              icon: Icons.person_off_outlined,
-              text: 'No hay miembros activos.',
-            )
-          else
-            ...activeMembers.map(
-              (member) => _MemberTile(
-                member: member,
-                onToggle: () => _toggleArchive(member),
-              ),
-            ),
-          if (archivedMembers.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Text(
-              'Archivados',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...archivedMembers.map(
-              (member) => _MemberTile(
-                member: member,
-                onToggle: () => _toggleArchive(member),
-              ),
-            ),
-          ],
-          const SizedBox(height: 28),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Gastos',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                '${_group.expenses.length}',
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (_group.expenses.isEmpty)
-            const _InfoTile(
-              icon: Icons.receipt_long_outlined,
-              text: 'Todavía no hay gastos.',
-            )
-          else
-            ..._group.expenses.map(
-              (expense) => _ExpenseTile(
-                expense: expense,
-                onEdit: () => _editExpense(expense),
-                onDelete: () => _deleteExpense(expense),
-              ),
-            ),
-        ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addMember,
@@ -412,6 +431,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -419,13 +439,11 @@ class _SummaryCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.12),
+              backgroundColor: colors.primaryContainer,
               child: Icon(
                 Icons.groups_outlined,
                 size: 28,
-                color: Theme.of(context).colorScheme.primary,
+                color: colors.onPrimaryContainer,
               ),
             ),
             const SizedBox(width: 14),
@@ -441,7 +459,7 @@ class _SummaryCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Creado localmente',
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(color: colors.onSurfaceVariant),
                 ),
               ],
             ),
@@ -488,7 +506,11 @@ class _InfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(leading: Icon(icon), title: Text(text)),
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(text),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      ),
     );
   }
 }
@@ -501,11 +523,12 @@ class _BalanceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final color = balance.isCreditor
-        ? Colors.green.shade700
+        ? colors.tertiary
         : balance.isDebtor
-        ? Theme.of(context).colorScheme.error
-        : Colors.grey.shade700;
+        ? colors.error
+        : colors.onSurfaceVariant;
     final sign = balance.balance > 0 ? '+' : '';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -534,10 +557,11 @@ class _SuggestedSettlementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: const Icon(Icons.arrow_forward_rounded, color: Colors.orange),
+        leading: Icon(Icons.arrow_forward_rounded, color: colors.tertiary),
         title: Text('${settlement.payerName} → ${settlement.payeeName}'),
         subtitle: Text(settlement.formattedAmount),
         trailing: TextButton(
@@ -557,10 +581,11 @@ class _SettlementHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
+        leading: Icon(Icons.check_circle, color: colors.tertiary),
         title: Text('${payment.payerName} → ${payment.payeeName}'),
         subtitle: const Text('Pago registrado'),
         trailing: Row(
@@ -586,15 +611,19 @@ class _SettledCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Card(
-      color: Colors.green.withValues(alpha: 0.12),
-      child: const ListTile(
-        leading: Icon(Icons.celebration_outlined, color: Colors.green),
-        title: Text(
+      color: colors.tertiaryContainer,
+      child: ListTile(
+        leading: Icon(
+          Icons.celebration_outlined,
+          color: colors.onTertiaryContainer,
+        ),
+        title: const Text(
           'Viaje saldado',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Nadie le debe dinero a nadie.'),
+        subtitle: const Text('Nadie le debe dinero a nadie.'),
       ),
     );
   }
