@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-class AppTheme {
-  static const _seedColor = Color(0xFF2563EB);
-  static const _lightBackground = Color(0xFFF6F7FB);
-  static const _darkBackground = Color(0xFF101216);
+import 'app_tokens.dart';
 
+class AppTheme {
   static ThemeData get lightTheme => _buildTheme(Brightness.light);
 
   static ThemeData get darkTheme => _buildTheme(Brightness.dark);
@@ -12,9 +10,9 @@ class AppTheme {
   static ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
+      seedColor: AppTokens.light.action,
       brightness: brightness,
-      surface: isDark ? _darkBackground : _lightBackground,
+      surface: isDark ? AppTokens.dark.canvas : AppTokens.light.canvas,
     );
     final textTheme = _textTheme(colorScheme);
 
@@ -23,6 +21,13 @@ class AppTheme {
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      extensions: <ThemeExtension<dynamic>>[
+        isDark ? AppTokens.dark : AppTokens.light,
+      ],
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: false,

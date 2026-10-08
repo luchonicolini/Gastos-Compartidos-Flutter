@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_tokens.dart';
 import '../../../domain/models/group.dart';
 import '../../../data/repositories/local_group_repository.dart';
+import '../../../shared/widgets/app_pressable.dart';
 import 'group_detail_screen.dart';
 import 'group_form_sheet.dart';
 
@@ -255,11 +257,13 @@ class _GroupCard extends StatelessWidget {
         .where((member) => !member.isArchived)
         .length;
     final colors = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
 
     return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+      child: AppPressable(
+        borderRadius: BorderRadius.circular(tokens.radiusCard),
         onTap: onTap,
+        semanticLabel: '${group.name}, abrir grupo',
         child: Semantics(
           button: true,
           label: '${group.name}, $activeMembers miembros',
@@ -269,11 +273,8 @@ class _GroupCard extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: colors.primaryContainer,
-                  child: Icon(
-                    Icons.group_outlined,
-                    color: colors.onPrimaryContainer,
-                  ),
+                  backgroundColor: tokens.surfaceSecondary,
+                  child: Icon(Icons.group_outlined, color: tokens.action),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

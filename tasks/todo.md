@@ -54,7 +54,8 @@
 
 ## Fase 5 — Diseño y publicación
 
-- [x] Aplicar sistema visual Apple-inspired inicial con tokens Material 3.
+- [x] Aplicar sistema visual Apple-inspired inicial con tokens propios.
+- [x] Definir contrato visual iOS-first y tokens propios de aplicación.
 - [x] Revisar navegación, sheets y safe areas del flujo existente.
 - [x] Mejorar contraste y soporte de modo oscuro en las pantallas principales.
 - [x] Adaptar lista de grupos y detalle para teléfonos, tablets y ventanas amplias.
