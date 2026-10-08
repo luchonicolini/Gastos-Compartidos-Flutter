@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
+import '../../../domain/models/expense.dart';
 import '../../../domain/models/person.dart';
+import '../../expenses/presentation/expense_form_sheet.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   const GroupDetailScreen({super.key, required this.group, required this.repository});
@@ -74,13 +76,57 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     await _saveGroup(_group.copyWith(members: members));
   }
 
+  Future<void> _addExpense() async {
+    final expense = await showModalBottomSheet<Expense>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => ExpenseFormSheet(group: _group),
+    );
+    if (expense == null) return;
+    await _saveGroup(_group.copyWith(expenses: [..._group.expenses, expense]));
+  }
+
+  Future<void> _editExpense(Expense expense) async {
+    final updated = await showModalBottomSheet<Expense>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => ExpenseFormSheet(group: _group, initialExpense: expense),
+    );
+    if (updated == null) return;
+    final expenses = _group.expenses.map((item) => item.id == updated.id ? updated : item).toList();
+    await _saveGroup(_group.copyWith(expenses: expenses));
+  }
+
+  Future<void> _deleteExpense(Expense expense) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar gasto'),
+        content: Text('¿Querés eliminar “${expense.description}”?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _saveGroup(_group.copyWith(expenses: _group.expenses.where((item) => item.id != expense.id).toList()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeMembers = _group.members.where((member) => !member.isArchived).toList();
     final archivedMembers = _group.members.where((member) => member.isArchived).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text(_group.name)),
+      appBar: AppBar(
+        title: Text(_group.name),
+        actions: [
+          IconButton(onPressed: _addExpense, icon: const Icon(Icons.add_card_outlined), tooltip: 'Agregar gasto'),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
@@ -104,6 +150,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             const SizedBox(height: 8),
             ...archivedMembers.map((member) => _MemberTile(member: member, onToggle: () => _toggleArchive(member))),
           ],
+          const SizedBox(height: 28),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Gastos', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('${_group.expenses.length}', style: TextStyle(color: Colors.grey.shade600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_group.expenses.isEmpty)
+            const _InfoTile(icon: Icons.receipt_long_outlined, text: 'Todavía no hay gastos.')
+          else
+            ..._group.expenses.map(
+              (expense) => _ExpenseTile(
+                expense: expense,
+                onEdit: () => _editExpense(expense),
+                onDelete: () => _deleteExpense(expense),
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -183,6 +248,42 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
+class _ExpenseTile extends StatelessWidget {
+  const _ExpenseTile({required this.expense, required this.onEdit, required this.onDelete});
+
+  final Expense expense;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.receipt_long_outlined)),
+        title: Text(expense.description),
+        subtitle: Text('Pagó ${expense.payer?.name ?? 'Sin definir'} • ${expense.splitType.localizedDescription}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('\$${expense.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('Editar')),
+                PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MemberFormSheet extends StatefulWidget {
   const _MemberFormSheet();
 
@@ -236,4 +337,3 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
     );
   }
 }
-

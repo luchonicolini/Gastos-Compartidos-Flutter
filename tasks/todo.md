@@ -27,13 +27,13 @@
 
 ## Fase 3 — Gastos
 
-- [ ] Implementar formulario base de gasto.
-- [ ] Implementar pagador y participantes.
-- [ ] Implementar división equitativa.
-- [ ] Implementar división por monto.
-- [ ] Implementar división por porcentaje.
-- [ ] Implementar división por partes.
-- [ ] Implementar edición y eliminación de gastos.
+- [x] Implementar formulario base de gasto.
+- [x] Implementar pagador y participantes.
+- [x] Implementar división equitativa.
+- [x] Implementar división por monto.
+- [x] Implementar división por porcentaje.
+- [x] Implementar división por partes.
+- [x] Implementar edición y eliminación de gastos.
 
 ## Fase 4 — Balances y liquidaciones
 

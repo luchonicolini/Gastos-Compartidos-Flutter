@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gastos_compartidos/data/database/app_database.dart' as database;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
+import 'package:gastos_compartidos/domain/models/expense.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
+import 'package:gastos_compartidos/domain/models/split_type.dart';
 
 void main() {
   late database.AppDatabase appDatabase;
@@ -67,5 +69,36 @@ void main() {
     await repository.delete(group.id);
     groups = await repository.getAll();
     expect(groups, isEmpty);
+  });
+
+  test('persiste gastos con pagador, participantes y reparto', () async {
+    final luciano = Person(id: 'person-5', name: 'Luciano');
+    final ana = Person(id: 'person-6', name: 'Ana');
+    final group = Group(
+      id: 'group-3',
+      name: 'Cena',
+      members: [luciano, ana],
+      expenses: [
+        Expense(
+          id: 'expense-1',
+          description: 'Pizza',
+          amount: 120,
+          payer: luciano,
+          participants: [luciano, ana],
+          splitType: SplitType.byPercentage,
+          splitDetails: {'person-5': 60, 'person-6': 40},
+        ),
+      ],
+    );
+
+    await repository.save(group);
+    final loaded = (await repository.getAll()).single;
+
+    expect(loaded.expenses, hasLength(1));
+    expect(loaded.expenses.single.description, 'Pizza');
+    expect(loaded.expenses.single.payer?.id, luciano.id);
+    expect(loaded.expenses.single.participants, hasLength(2));
+    expect(loaded.expenses.single.splitType, SplitType.byPercentage);
+    expect(loaded.expenses.single.splitDetails?['person-6'], 40);
   });
 }

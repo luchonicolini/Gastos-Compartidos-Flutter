@@ -50,5 +50,16 @@ void main() {
 
     expect(find.text('Luciano'), findsOneWidget);
     expect(find.text('1 activos'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Agregar gasto'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Cena');
+    await tester.enterText(fields.at(1), '100');
+    await tester.tap(find.text('Guardar gasto'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cena'), findsOneWidget);
+    expect(find.text(r'$100.00'), findsOneWidget);
   });
 }

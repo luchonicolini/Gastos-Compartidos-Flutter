@@ -34,12 +34,55 @@ class GroupMembers extends Table {
   Set<Column<Object>> get primaryKey => {groupId, personId};
 }
 
-@DriftDatabase(tables: [Groups, Persons, GroupMembers])
+class Expenses extends Table {
+  TextColumn get id => text()();
+  TextColumn get groupId => text().references(Groups, #id)();
+  TextColumn get description => text()();
+  RealColumn get amount => real()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get payerId => text().nullable()();
+  IntColumn get splitType => integer()();
+  TextColumn get splitDetailsJson => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class ExpenseParticipants extends Table {
+  TextColumn get expenseId => text().references(Expenses, #id)();
+  TextColumn get personId => text().references(Persons, #id)();
+
+  @override
+  Set<Column<Object>> get primaryKey => {expenseId, personId};
+}
+
+class ExpenseSplits extends Table {
+  TextColumn get expenseId => text().references(Expenses, #id)();
+  TextColumn get personId => text().references(Persons, #id)();
+  RealColumn get value => real()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {expenseId, personId};
+}
+
+@DriftDatabase(tables: [Groups, Persons, GroupMembers, Expenses, ExpenseParticipants, ExpenseSplits])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'gastos_compartidos'));
 
   AppDatabase.inMemory() : super(openMemoryDatabase());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator migrator) => migrator.createAll(),
+        onUpgrade: (Migrator migrator, int from, int to) async {
+          if (from < 2) {
+            await migrator.createTable(expenses);
+            await migrator.createTable(expenseParticipants);
+            await migrator.createTable(expenseSplits);
+          }
+        },
+      );
 }

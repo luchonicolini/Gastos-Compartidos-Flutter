@@ -38,6 +38,30 @@ void main() {
       expect((shares[frodo.id]! - shares[sam.id]!).abs(), lessThanOrEqualTo(0.01));
     });
 
+    test('Calcula división por monto, porcentaje y partes', () {
+      final participants = [frodo, sam];
+      final amountExpense = Expense(
+        description: 'Hotel',
+        amount: 100,
+        payer: frodo,
+        participants: participants,
+        splitType: SplitType.byAmount,
+        splitDetails: {'1': 25, '2': 75},
+      );
+      final percentageExpense = amountExpense.copyWith(
+        splitType: SplitType.byPercentage,
+        splitDetails: {'1': 25, '2': 75},
+      );
+      final sharesExpense = amountExpense.copyWith(
+        splitType: SplitType.byShares,
+        splitDetails: {'1': 1, '2': 3},
+      );
+
+      expect(BalanceCalculator.calculateShares(expense: amountExpense, participants: participants), {'1': 25, '2': 75});
+      expect(BalanceCalculator.calculateShares(expense: percentageExpense, participants: participants), {'1': 25, '2': 75});
+      expect(BalanceCalculator.calculateShares(expense: sharesExpense, participants: participants), {'1': 25, '2': 75});
+    });
+
     test('Cálculo de balances y sugerencia de liquidación de cuentas', () {
       // Frodo paga 100 por Frodo y Sam (50 cada uno)
       // Sam debe 50 a Frodo
