@@ -10,6 +10,7 @@ import '../../../domain/models/person.dart';
 import '../../../domain/models/settlement_payment.dart';
 import '../../../logic/balance_calculator.dart';
 import '../../../logic/settlement_calculator.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../expenses/presentation/expense_form_sheet.dart';
 
 class GroupDetailScreen extends StatefulWidget {
@@ -432,36 +433,60 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
+    final total = group.expenses.fold<double>(
+      0,
+      (sum, expense) => sum + expense.amount,
+    );
     return Card(
+      color: tokens.surfaceSecondary,
       child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: colors.primaryContainer,
-              child: Icon(
-                Icons.groups_outlined,
-                size: 28,
-                color: colors.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  group.name,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: colors.primaryContainer,
+                  child: Icon(
+                    Icons.groups_outlined,
+                    color: colors.onPrimaryContainer,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Creado localmente',
-                  style: TextStyle(color: colors.onSurfaceVariant),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    group.name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Total registrado',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: tokens.labelSecondary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${group.referenceCurrency.symbol}${total.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${group.expenses.length} ${group.expenses.length == 1 ? 'gasto' : 'gastos'} · ${group.referenceCurrency.code}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: tokens.labelSecondary),
             ),
           ],
         ),
@@ -684,71 +709,98 @@ class _MemberFormSheet extends StatefulWidget {
 }
 
 class _MemberFormSheetState extends State<_MemberFormSheet> {
+  final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
-  String? _errorText;
+  final _focusNode = FocusNode();
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final name = _controller.text.trim();
-    if (name.isEmpty) {
-      setState(() => _errorText = 'Ingresá un nombre');
+    if (!_formKey.currentState!.validate()) {
+      _focusNode.requestFocus();
       return;
     }
+    final name = _controller.text.trim();
     Navigator.pop(context, name);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        MediaQuery.viewInsetsOf(context).bottom + 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          MediaQuery.viewInsetsOf(context).bottom + 20,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.tokens.separator,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Agregar miembro',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('close-member-form'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Cancelar',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const ValueKey<String>('member-name-field'),
+                controller: _controller,
+                focusNode: _focusNode,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Ingresá un nombre'
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  hintText: 'Ej. Ana',
+                  helperText: ' ',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                key: const ValueKey<String>('save-member-form'),
+                onPressed: _submit,
+                child: const Text('Agregar'),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Agregar miembro',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(
-              labelText: 'Nombre',
-              hintText: 'Ej. Ana',
-              errorText: _errorText,
-              prefixIcon: const Icon(Icons.person_outline),
-            ),
-          ),
-          const SizedBox(height: 20),
-          FilledButton(onPressed: _submit, child: const Text('Agregar')),
-        ],
+        ),
       ),
     );
   }

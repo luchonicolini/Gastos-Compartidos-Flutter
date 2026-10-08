@@ -19,7 +19,9 @@ void main() {
     await appDatabase.close();
   });
 
-  testWidgets('muestra el estado vacío cuando no existen grupos', (tester) async {
+  testWidgets('muestra el estado vacío cuando no existen grupos', (
+    tester,
+  ) async {
     await tester.pumpWidget(GastosCompartidosApp(database: appDatabase));
     await tester.pumpAndSettle();
 
@@ -34,7 +36,10 @@ void main() {
 
     await tester.tap(find.text('Crear mi primer grupo'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Viaje a la Costa');
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('group-name-field')),
+      'Viaje a la Costa',
+    );
     await tester.tap(find.text('Crear grupo'));
     await tester.pumpAndSettle();
 
@@ -48,7 +53,10 @@ void main() {
 
     await tester.tap(find.text('Agregar miembro'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Luciano');
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('member-name-field')),
+      'Luciano',
+    );
     await tester.tap(find.text('Agregar'));
     await tester.pumpAndSettle();
 
@@ -57,9 +65,14 @@ void main() {
 
     await tester.tap(find.byTooltip('Agregar gasto'));
     await tester.pumpAndSettle();
-    final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'Cena');
-    await tester.enterText(fields.at(1), '100');
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('expense-description-field')),
+      'Cena',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('expense-amount-field')),
+      '100',
+    );
     await tester.tap(find.text('Guardar gasto'));
     await tester.pumpAndSettle();
     expect(find.text('Cena', skipOffstage: false), findsOneWidget);

@@ -16,28 +16,30 @@ class GroupFormSheet extends StatefulWidget {
 }
 
 class _GroupFormSheetState extends State<GroupFormSheet> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  String? _errorText;
+  late final FocusNode _nameFocus;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
+    _nameFocus = FocusNode();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() => _errorText = 'Ingresá un nombre para el grupo');
+    if (!_formKey.currentState!.validate()) {
+      _nameFocus.requestFocus();
       return;
     }
-
+    final name = _nameController.text.trim();
     Navigator.of(context).pop(GroupFormResult(name: name));
   }
 
@@ -46,51 +48,74 @@ class _GroupFormSheetState extends State<GroupFormSheet> {
     final isEditing = widget.initialName != null;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            isEditing ? 'Editar grupo' : 'Nuevo grupo',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomInset + 20),
+        child: Form(
+          key: _formKey,
+          child: FocusTraversalGroup(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _nameController,
-            autofocus: true,
-            textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(
-              labelText: 'Nombre del grupo',
-              hintText: 'Ej. Viaje a Brasil',
-              errorText: _errorText,
-              prefixIcon: const Icon(Icons.group_outlined),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        isEditing ? 'Editar grupo' : 'Nuevo grupo',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      key: const ValueKey<String>('close-group-form'),
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Cancelar',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: const ValueKey<String>('group-name-field'),
+                  controller: _nameController,
+                  focusNode: _nameFocus,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submit(),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Ingresá un nombre para el grupo'
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del grupo',
+                    hintText: 'Ej. Viaje a Brasil',
+                    helperText: ' ',
+                    prefixIcon: Icon(Icons.group_outlined),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  key: const ValueKey<String>('save-group-form'),
+                  onPressed: _submit,
+                  child: Text(isEditing ? 'Guardar cambios' : 'Crear grupo'),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: _submit,
-            child: Text(isEditing ? 'Guardar cambios' : 'Crear grupo'),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
-
