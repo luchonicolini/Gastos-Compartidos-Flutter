@@ -18,12 +18,12 @@
 
 ## Fase 2 — Grupos y miembros
 
-- [ ] Implementar lista persistente de grupos.
-- [ ] Implementar crear y editar grupo.
-- [ ] Implementar eliminar grupo con confirmación.
-- [ ] Implementar detalle de grupo.
+- [x] Implementar lista persistente de grupos.
+- [x] Implementar crear y editar grupo.
+- [x] Implementar eliminar grupo con confirmación.
+- [x] Implementar detalle de grupo.
 - [ ] Implementar agregar y editar miembros.
-- [ ] Implementar archivar y reactivar miembros.
+- [x] Implementar archivar y reactivar miembros.
 
 ## Fase 3 — Gastos
 

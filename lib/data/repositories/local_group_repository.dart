@@ -21,6 +21,10 @@ class LocalGroupRepository {
             ),
           );
 
+      await (_database.delete(_database.groupMembers)
+            ..where((member) => member.groupId.equals(group.id)))
+          .go();
+
       for (final member in group.members) {
         await _database.into(_database.persons).insertOnConflictUpdate(
               PersonsCompanion.insert(
@@ -38,6 +42,17 @@ class LocalGroupRepository {
               ),
             );
       }
+    });
+  }
+
+  Future<void> delete(String groupId) async {
+    await _database.transaction(() async {
+      await (_database.delete(_database.groupMembers)
+            ..where((member) => member.groupId.equals(groupId)))
+          .go();
+      await (_database.delete(_database.groups)
+            ..where((group) => group.id.equals(groupId)))
+          .go();
     });
   }
 

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+
+import 'memory_database.dart';
 
 part 'app_database.g.dart';
 
@@ -37,7 +38,7 @@ class GroupMembers extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'gastos_compartidos'));
 
-  AppDatabase.inMemory() : super(NativeDatabase.memory());
+  AppDatabase.inMemory() : super(openMemoryDatabase());
 
   @override
   int get schemaVersion => 1;
