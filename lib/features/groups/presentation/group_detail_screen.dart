@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/expense.dart';
+import '../../../domain/models/currency.dart';
+import '../../../domain/models/member_balance.dart';
 import '../../../domain/models/person.dart';
+import '../../../domain/models/settlement_payment.dart';
+import '../../../logic/balance_calculator.dart';
+import '../../../logic/settlement_calculator.dart';
 import '../../expenses/presentation/expense_form_sheet.dart';
 
 class GroupDetailScreen extends StatefulWidget {
@@ -115,10 +120,60 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     await _saveGroup(_group.copyWith(expenses: _group.expenses.where((item) => item.id != expense.id).toList()));
   }
 
+  Future<void> _confirmSettlement(FormattedSettlement settlement) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar pago'),
+        content: Text('${settlement.payerName} le pagó a ${settlement.payeeName} ${settlement.formattedAmount}. ¿Querés registrarlo?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final payment = SettlementPayment(
+      payerId: settlement.payerId,
+      payeeId: settlement.payeeId,
+      amount: settlement.amount,
+      groupId: _group.id,
+      payerName: settlement.payerName,
+      payeeName: settlement.payeeName,
+      currency: _group.referenceCurrency,
+    );
+    await _saveGroup(_group.copyWith(settlementPayments: [..._group.settlementPayments, payment]));
+  }
+
+  Future<void> _deleteSettlement(SettlementPayment payment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar pago registrado'),
+        content: Text('¿Querés quitar el pago de ${payment.payerName} a ${payment.payeeName}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _saveGroup(_group.copyWith(
+      settlementPayments: _group.settlementPayments.where((item) => item.id != payment.id).toList(),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeMembers = _group.members.where((member) => !member.isArchived).toList();
     final archivedMembers = _group.members.where((member) => member.isArchived).toList();
+    final balances = BalanceCalculator.calculateMemberBalances(_group);
+    final pendingSettlements = SettlementCalculator.suggestFormattedSettlements(
+      balances,
+      currencySymbol: _group.referenceCurrency.symbol,
+    );
+    final isSettled = balances.isNotEmpty && balances.every((balance) => balance.isNeutral);
 
     return Scaffold(
       appBar: AppBar(
@@ -132,6 +187,39 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         children: [
           _SummaryCard(group: _group),
           const SizedBox(height: 24),
+          Text('¿Cómo vamos?', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          if (_group.members.isEmpty)
+            const _InfoTile(icon: Icons.insights_outlined, text: 'Agregá miembros para ver balances.')
+          else if (_group.expenses.isEmpty)
+            const _InfoTile(icon: Icons.insights_outlined, text: 'Agregá un gasto para calcular balances.')
+          else ...[
+            if (isSettled)
+              const _SettledCard()
+            else
+              ...balances.map((balance) => _BalanceTile(balance: balance, currency: _group.referenceCurrency)),
+            const SizedBox(height: 16),
+            Text('Pagos sugeridos', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (pendingSettlements.isEmpty)
+              const _InfoTile(icon: Icons.check_circle_outline, text: 'No hay pagos pendientes.')
+            else
+              ...pendingSettlements.map(
+                (settlement) => _SuggestedSettlementTile(
+                  settlement: settlement,
+                  onConfirm: () => _confirmSettlement(settlement),
+                ),
+              ),
+          ],
+          if (_group.settlementPayments.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text('Pagos registrados', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ..._group.settlementPayments.map(
+              (payment) => _SettlementHistoryTile(payment: payment, onDelete: () => _deleteSettlement(payment)),
+            ),
+          ],
+          const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -245,6 +333,96 @@ class _InfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(child: ListTile(leading: Icon(icon), title: Text(text)));
+  }
+}
+
+class _BalanceTile extends StatelessWidget {
+  const _BalanceTile({required this.balance, required this.currency});
+
+  final MemberBalance balance;
+  final Currency currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = balance.isCreditor
+        ? Colors.green.shade700
+        : balance.isDebtor
+            ? Theme.of(context).colorScheme.error
+            : Colors.grey.shade700;
+    final sign = balance.balance > 0 ? '+' : '';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(child: Text(balance.name.characters.first.toUpperCase())),
+        title: Text(balance.name),
+        trailing: Text(
+          '$sign${currency.symbol}${balance.balance.abs().toStringAsFixed(2)}',
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestedSettlementTile extends StatelessWidget {
+  const _SuggestedSettlementTile({required this.settlement, required this.onConfirm});
+
+  final FormattedSettlement settlement;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: const Icon(Icons.arrow_forward_rounded, color: Colors.orange),
+        title: Text('${settlement.payerName} → ${settlement.payeeName}'),
+        subtitle: Text(settlement.formattedAmount),
+        trailing: TextButton(onPressed: onConfirm, child: const Text('Confirmar')),
+      ),
+    );
+  }
+}
+
+class _SettlementHistoryTile extends StatelessWidget {
+  const _SettlementHistoryTile({required this.payment, required this.onDelete});
+
+  final SettlementPayment payment;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: const Icon(Icons.check_circle, color: Colors.green),
+        title: Text('${payment.payerName} → ${payment.payeeName}'),
+        subtitle: const Text('Pago registrado'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${payment.currency.symbol}${payment.amount.toStringAsFixed(2)}'),
+            IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline), tooltip: 'Eliminar pago'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettledCard extends StatelessWidget {
+  const _SettledCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.green.withValues(alpha: 0.12),
+      child: const ListTile(
+        leading: Icon(Icons.celebration_outlined, color: Colors.green),
+        title: Text('Viaje saldado', style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Nadie le debe dinero a nadie.'),
+      ),
+    );
   }
 }
 

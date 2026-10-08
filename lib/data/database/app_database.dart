@@ -80,14 +80,29 @@ class ExpenseSplits extends Table {
   Set<Column<Object>> get primaryKey => {expenseId, personId};
 }
 
-@DriftDatabase(tables: [Groups, Persons, GroupMembers, Expenses, ExpensePayers, ExpenseParticipants, ExpenseSplits])
+class Settlements extends Table {
+  TextColumn get id => text()();
+  TextColumn get groupId => text().references(Groups, #id)();
+  TextColumn get payerId => text()();
+  TextColumn get payeeId => text()();
+  TextColumn get payerName => text()();
+  TextColumn get payeeName => text()();
+  IntColumn get amountCents => integer()();
+  TextColumn get currencyCode => text()();
+  DateTimeColumn get date => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Groups, Persons, GroupMembers, Expenses, ExpensePayers, ExpenseParticipants, ExpenseSplits, Settlements])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'gastos_compartidos'));
 
   AppDatabase.inMemory() : super(openMemoryDatabase());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -107,6 +122,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await migrator.addColumn(groups, groups.referenceCurrencyCode);
+          }
+          if (from < 5) {
+            await migrator.createTable(settlements);
           }
         },
       );

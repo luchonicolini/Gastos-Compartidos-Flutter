@@ -1,5 +1,8 @@
 import 'package:uuid/uuid.dart';
 
+import 'currency.dart';
+import 'money.dart';
+
 class SettlementPayment {
   final String id;
   final String payerId;
@@ -9,6 +12,7 @@ class SettlementPayment {
   final String? groupId;
   final String payerName;
   final String payeeName;
+  final Currency currency;
 
   SettlementPayment({
     String? id,
@@ -19,8 +23,12 @@ class SettlementPayment {
     this.groupId,
     required this.payerName,
     required this.payeeName,
+    Currency? currency,
   })  : id = id ?? const Uuid().v4(),
-        date = date ?? DateTime.now();
+        date = date ?? DateTime.now(),
+        currency = currency ?? Currency.ars;
+
+  Money get money => Money.fromDecimal(amount, currency);
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -31,6 +39,7 @@ class SettlementPayment {
         'groupId': groupId,
         'payerName': payerName,
         'payeeName': payeeName,
+        'currency': currency.code,
       };
 
   factory SettlementPayment.fromJson(Map<String, dynamic> json) =>
@@ -43,6 +52,7 @@ class SettlementPayment {
         groupId: json['groupId'] as String?,
         payerName: json['payerName'] as String,
         payeeName: json['payeeName'] as String,
+        currency: Currency.fromCode(json['currency'] as String? ?? 'ARS'),
       );
 }
 

@@ -8,6 +8,7 @@ import 'package:gastos_compartidos/domain/models/currency.dart';
 import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
+import 'package:gastos_compartidos/domain/models/settlement_payment.dart';
 
 void main() {
   late database.AppDatabase appDatabase;
@@ -139,5 +140,34 @@ void main() {
     expect(expense.exchangeRate, 250);
     expect(expense.payers, hasLength(2));
     expect(expense.payers.first.amount.cents + expense.payers.last.amount.cents, 8750000);
+  });
+
+  test('persiste liquidaciones confirmadas', () async {
+    final luciano = Person(id: 'person-9', name: 'Luciano');
+    final ana = Person(id: 'person-10', name: 'Ana');
+    final group = Group(
+      id: 'group-5',
+      name: 'Liquidación',
+      members: [luciano, ana],
+      settlementPayments: [
+        SettlementPayment(
+          id: 'settlement-1',
+          payerId: ana.id,
+          payeeId: luciano.id,
+          payerName: ana.name,
+          payeeName: luciano.name,
+          amount: 50,
+          groupId: 'group-5',
+          currency: Currency.ars,
+        ),
+      ],
+    );
+
+    await repository.save(group);
+    final loaded = (await repository.getAll()).single;
+
+    expect(loaded.settlementPayments, hasLength(1));
+    expect(loaded.settlementPayments.single.payerId, ana.id);
+    expect(loaded.settlementPayments.single.amount, 50);
   });
 }

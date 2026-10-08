@@ -8,6 +8,7 @@ import '../../domain/models/person.dart' as domain;
 import '../../domain/models/currency.dart' as domain_currency;
 import '../../domain/models/money.dart' as domain_money;
 import '../../domain/models/split_type.dart';
+import '../../domain/models/settlement_payment.dart' as domain_settlement;
 import '../database/app_database.dart';
 
 class LocalGroupRepository {
@@ -118,6 +119,25 @@ class LocalGroupRepository {
               );
         }
       }
+
+      await (_database.delete(_database.settlements)
+            ..where((settlement) => settlement.groupId.equals(group.id)))
+          .go();
+      for (final settlement in group.settlementPayments) {
+        await _database.into(_database.settlements).insert(
+              SettlementsCompanion.insert(
+                id: settlement.id,
+                groupId: group.id,
+                payerId: settlement.payerId,
+                payeeId: settlement.payeeId,
+                payerName: settlement.payerName,
+                payeeName: settlement.payeeName,
+                amountCents: (settlement.amount * 100).round(),
+                currencyCode: settlement.currency.code,
+                date: settlement.date,
+              ),
+            );
+      }
     });
   }
 
@@ -142,6 +162,9 @@ class LocalGroupRepository {
       }
       await (_database.delete(_database.expenses)
             ..where((expense) => expense.groupId.equals(groupId)))
+          .go();
+      await (_database.delete(_database.settlements)
+            ..where((settlement) => settlement.groupId.equals(groupId)))
           .go();
       await (_database.delete(_database.groups)
             ..where((group) => group.id.equals(groupId)))
@@ -275,6 +298,26 @@ class LocalGroupRepository {
         );
       }
 
+      final settlementRows = await (_database.select(_database.settlements)
+            ..where((settlement) => settlement.groupId.equals(groupRow.id))
+            ..orderBy([(settlement) => OrderingTerm.desc(settlement.date)]))
+          .get();
+      final settlements = settlementRows
+          .map(
+            (row) => domain_settlement.SettlementPayment(
+              id: row.id,
+              payerId: row.payerId,
+              payeeId: row.payeeId,
+              payerName: row.payerName,
+              payeeName: row.payeeName,
+              amount: row.amountCents / 100,
+              date: row.date,
+              groupId: row.groupId,
+              currency: domain_currency.Currency.fromCode(row.currencyCode),
+            ),
+          )
+          .toList();
+
       groups.add(
         domain.Group(
           id: groupRow.id,
@@ -285,6 +328,7 @@ class LocalGroupRepository {
           referenceCurrency: domain_currency.Currency.fromCode(groupRow.referenceCurrencyCode),
           members: members,
           expenses: expenses,
+          settlementPayments: settlements,
         ),
       );
     }

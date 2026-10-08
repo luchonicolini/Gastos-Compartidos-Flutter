@@ -41,11 +41,11 @@
 
 ## Fase 4 — Balances y liquidaciones
 
-- [ ] Implementar resumen de balances.
-- [ ] Implementar sugerencias de pagos.
-- [ ] Implementar confirmación de liquidación.
-- [ ] Implementar eliminación de liquidación.
-- [ ] Implementar estado de cuentas saldadas.
+- [x] Implementar resumen de balances.
+- [x] Implementar sugerencias de pagos.
+- [x] Implementar confirmación de liquidación.
+- [x] Implementar eliminación de liquidación.
+- [x] Implementar estado de cuentas saldadas.
 
 ## Fase 5 — Diseño y publicación
 

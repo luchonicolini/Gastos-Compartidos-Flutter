@@ -2543,6 +2543,577 @@ class ExpenseSplitsCompanion extends UpdateCompanion<ExpenseSplit> {
   }
 }
 
+class $SettlementsTable extends Settlements
+    with TableInfo<$SettlementsTable, Settlement> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SettlementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES "groups" (id)',
+    ),
+  );
+  static const VerificationMeta _payerIdMeta = const VerificationMeta(
+    'payerId',
+  );
+  @override
+  late final GeneratedColumn<String> payerId = GeneratedColumn<String>(
+    'payer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payeeIdMeta = const VerificationMeta(
+    'payeeId',
+  );
+  @override
+  late final GeneratedColumn<String> payeeId = GeneratedColumn<String>(
+    'payee_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payerNameMeta = const VerificationMeta(
+    'payerName',
+  );
+  @override
+  late final GeneratedColumn<String> payerName = GeneratedColumn<String>(
+    'payer_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payeeNameMeta = const VerificationMeta(
+    'payeeName',
+  );
+  @override
+  late final GeneratedColumn<String> payeeName = GeneratedColumn<String>(
+    'payee_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
+    'amountCents',
+  );
+  @override
+  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
+    'amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyCodeMeta = const VerificationMeta(
+    'currencyCode',
+  );
+  @override
+  late final GeneratedColumn<String> currencyCode = GeneratedColumn<String>(
+    'currency_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    groupId,
+    payerId,
+    payeeId,
+    payerName,
+    payeeName,
+    amountCents,
+    currencyCode,
+    date,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'settlements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Settlement> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_groupIdMeta);
+    }
+    if (data.containsKey('payer_id')) {
+      context.handle(
+        _payerIdMeta,
+        payerId.isAcceptableOrUnknown(data['payer_id']!, _payerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payerIdMeta);
+    }
+    if (data.containsKey('payee_id')) {
+      context.handle(
+        _payeeIdMeta,
+        payeeId.isAcceptableOrUnknown(data['payee_id']!, _payeeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payeeIdMeta);
+    }
+    if (data.containsKey('payer_name')) {
+      context.handle(
+        _payerNameMeta,
+        payerName.isAcceptableOrUnknown(data['payer_name']!, _payerNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payerNameMeta);
+    }
+    if (data.containsKey('payee_name')) {
+      context.handle(
+        _payeeNameMeta,
+        payeeName.isAcceptableOrUnknown(data['payee_name']!, _payeeNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payeeNameMeta);
+    }
+    if (data.containsKey('amount_cents')) {
+      context.handle(
+        _amountCentsMeta,
+        amountCents.isAcceptableOrUnknown(
+          data['amount_cents']!,
+          _amountCentsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountCentsMeta);
+    }
+    if (data.containsKey('currency_code')) {
+      context.handle(
+        _currencyCodeMeta,
+        currencyCode.isAcceptableOrUnknown(
+          data['currency_code']!,
+          _currencyCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyCodeMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Settlement map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Settlement(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      )!,
+      payerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payer_id'],
+      )!,
+      payeeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payee_id'],
+      )!,
+      payerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payer_name'],
+      )!,
+      payeeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payee_name'],
+      )!,
+      amountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_cents'],
+      )!,
+      currencyCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency_code'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      )!,
+    );
+  }
+
+  @override
+  $SettlementsTable createAlias(String alias) {
+    return $SettlementsTable(attachedDatabase, alias);
+  }
+}
+
+class Settlement extends DataClass implements Insertable<Settlement> {
+  final String id;
+  final String groupId;
+  final String payerId;
+  final String payeeId;
+  final String payerName;
+  final String payeeName;
+  final int amountCents;
+  final String currencyCode;
+  final DateTime date;
+  const Settlement({
+    required this.id,
+    required this.groupId,
+    required this.payerId,
+    required this.payeeId,
+    required this.payerName,
+    required this.payeeName,
+    required this.amountCents,
+    required this.currencyCode,
+    required this.date,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['group_id'] = Variable<String>(groupId);
+    map['payer_id'] = Variable<String>(payerId);
+    map['payee_id'] = Variable<String>(payeeId);
+    map['payer_name'] = Variable<String>(payerName);
+    map['payee_name'] = Variable<String>(payeeName);
+    map['amount_cents'] = Variable<int>(amountCents);
+    map['currency_code'] = Variable<String>(currencyCode);
+    map['date'] = Variable<DateTime>(date);
+    return map;
+  }
+
+  SettlementsCompanion toCompanion(bool nullToAbsent) {
+    return SettlementsCompanion(
+      id: Value(id),
+      groupId: Value(groupId),
+      payerId: Value(payerId),
+      payeeId: Value(payeeId),
+      payerName: Value(payerName),
+      payeeName: Value(payeeName),
+      amountCents: Value(amountCents),
+      currencyCode: Value(currencyCode),
+      date: Value(date),
+    );
+  }
+
+  factory Settlement.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Settlement(
+      id: serializer.fromJson<String>(json['id']),
+      groupId: serializer.fromJson<String>(json['groupId']),
+      payerId: serializer.fromJson<String>(json['payerId']),
+      payeeId: serializer.fromJson<String>(json['payeeId']),
+      payerName: serializer.fromJson<String>(json['payerName']),
+      payeeName: serializer.fromJson<String>(json['payeeName']),
+      amountCents: serializer.fromJson<int>(json['amountCents']),
+      currencyCode: serializer.fromJson<String>(json['currencyCode']),
+      date: serializer.fromJson<DateTime>(json['date']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'groupId': serializer.toJson<String>(groupId),
+      'payerId': serializer.toJson<String>(payerId),
+      'payeeId': serializer.toJson<String>(payeeId),
+      'payerName': serializer.toJson<String>(payerName),
+      'payeeName': serializer.toJson<String>(payeeName),
+      'amountCents': serializer.toJson<int>(amountCents),
+      'currencyCode': serializer.toJson<String>(currencyCode),
+      'date': serializer.toJson<DateTime>(date),
+    };
+  }
+
+  Settlement copyWith({
+    String? id,
+    String? groupId,
+    String? payerId,
+    String? payeeId,
+    String? payerName,
+    String? payeeName,
+    int? amountCents,
+    String? currencyCode,
+    DateTime? date,
+  }) => Settlement(
+    id: id ?? this.id,
+    groupId: groupId ?? this.groupId,
+    payerId: payerId ?? this.payerId,
+    payeeId: payeeId ?? this.payeeId,
+    payerName: payerName ?? this.payerName,
+    payeeName: payeeName ?? this.payeeName,
+    amountCents: amountCents ?? this.amountCents,
+    currencyCode: currencyCode ?? this.currencyCode,
+    date: date ?? this.date,
+  );
+  Settlement copyWithCompanion(SettlementsCompanion data) {
+    return Settlement(
+      id: data.id.present ? data.id.value : this.id,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      payerId: data.payerId.present ? data.payerId.value : this.payerId,
+      payeeId: data.payeeId.present ? data.payeeId.value : this.payeeId,
+      payerName: data.payerName.present ? data.payerName.value : this.payerName,
+      payeeName: data.payeeName.present ? data.payeeName.value : this.payeeName,
+      amountCents: data.amountCents.present
+          ? data.amountCents.value
+          : this.amountCents,
+      currencyCode: data.currencyCode.present
+          ? data.currencyCode.value
+          : this.currencyCode,
+      date: data.date.present ? data.date.value : this.date,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Settlement(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('payerId: $payerId, ')
+          ..write('payeeId: $payeeId, ')
+          ..write('payerName: $payerName, ')
+          ..write('payeeName: $payeeName, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('date: $date')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    groupId,
+    payerId,
+    payeeId,
+    payerName,
+    payeeName,
+    amountCents,
+    currencyCode,
+    date,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Settlement &&
+          other.id == this.id &&
+          other.groupId == this.groupId &&
+          other.payerId == this.payerId &&
+          other.payeeId == this.payeeId &&
+          other.payerName == this.payerName &&
+          other.payeeName == this.payeeName &&
+          other.amountCents == this.amountCents &&
+          other.currencyCode == this.currencyCode &&
+          other.date == this.date);
+}
+
+class SettlementsCompanion extends UpdateCompanion<Settlement> {
+  final Value<String> id;
+  final Value<String> groupId;
+  final Value<String> payerId;
+  final Value<String> payeeId;
+  final Value<String> payerName;
+  final Value<String> payeeName;
+  final Value<int> amountCents;
+  final Value<String> currencyCode;
+  final Value<DateTime> date;
+  final Value<int> rowid;
+  const SettlementsCompanion({
+    this.id = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.payerId = const Value.absent(),
+    this.payeeId = const Value.absent(),
+    this.payerName = const Value.absent(),
+    this.payeeName = const Value.absent(),
+    this.amountCents = const Value.absent(),
+    this.currencyCode = const Value.absent(),
+    this.date = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SettlementsCompanion.insert({
+    required String id,
+    required String groupId,
+    required String payerId,
+    required String payeeId,
+    required String payerName,
+    required String payeeName,
+    required int amountCents,
+    required String currencyCode,
+    required DateTime date,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       groupId = Value(groupId),
+       payerId = Value(payerId),
+       payeeId = Value(payeeId),
+       payerName = Value(payerName),
+       payeeName = Value(payeeName),
+       amountCents = Value(amountCents),
+       currencyCode = Value(currencyCode),
+       date = Value(date);
+  static Insertable<Settlement> custom({
+    Expression<String>? id,
+    Expression<String>? groupId,
+    Expression<String>? payerId,
+    Expression<String>? payeeId,
+    Expression<String>? payerName,
+    Expression<String>? payeeName,
+    Expression<int>? amountCents,
+    Expression<String>? currencyCode,
+    Expression<DateTime>? date,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (groupId != null) 'group_id': groupId,
+      if (payerId != null) 'payer_id': payerId,
+      if (payeeId != null) 'payee_id': payeeId,
+      if (payerName != null) 'payer_name': payerName,
+      if (payeeName != null) 'payee_name': payeeName,
+      if (amountCents != null) 'amount_cents': amountCents,
+      if (currencyCode != null) 'currency_code': currencyCode,
+      if (date != null) 'date': date,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SettlementsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? groupId,
+    Value<String>? payerId,
+    Value<String>? payeeId,
+    Value<String>? payerName,
+    Value<String>? payeeName,
+    Value<int>? amountCents,
+    Value<String>? currencyCode,
+    Value<DateTime>? date,
+    Value<int>? rowid,
+  }) {
+    return SettlementsCompanion(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      payerId: payerId ?? this.payerId,
+      payeeId: payeeId ?? this.payeeId,
+      payerName: payerName ?? this.payerName,
+      payeeName: payeeName ?? this.payeeName,
+      amountCents: amountCents ?? this.amountCents,
+      currencyCode: currencyCode ?? this.currencyCode,
+      date: date ?? this.date,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (payerId.present) {
+      map['payer_id'] = Variable<String>(payerId.value);
+    }
+    if (payeeId.present) {
+      map['payee_id'] = Variable<String>(payeeId.value);
+    }
+    if (payerName.present) {
+      map['payer_name'] = Variable<String>(payerName.value);
+    }
+    if (payeeName.present) {
+      map['payee_name'] = Variable<String>(payeeName.value);
+    }
+    if (amountCents.present) {
+      map['amount_cents'] = Variable<int>(amountCents.value);
+    }
+    if (currencyCode.present) {
+      map['currency_code'] = Variable<String>(currencyCode.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettlementsCompanion(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('payerId: $payerId, ')
+          ..write('payeeId: $payeeId, ')
+          ..write('payerName: $payerName, ')
+          ..write('payeeName: $payeeName, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('currencyCode: $currencyCode, ')
+          ..write('date: $date, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2554,6 +3125,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ExpenseParticipantsTable expenseParticipants =
       $ExpenseParticipantsTable(this);
   late final $ExpenseSplitsTable expenseSplits = $ExpenseSplitsTable(this);
+  late final $SettlementsTable settlements = $SettlementsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2566,6 +3138,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     expensePayers,
     expenseParticipants,
     expenseSplits,
+    settlements,
   ];
 }
 
@@ -2626,6 +3199,24 @@ final class $$GroupsTableReferences
     ).filter((f) => f.groupId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_expensesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SettlementsTable, List<Settlement>>
+  _settlementsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.settlements,
+    aliasName: 'groups__id__settlements__group_id',
+  );
+
+  $$SettlementsTableProcessedTableManager get settlementsRefs {
+    final manager = $$SettlementsTableTableManager(
+      $_db,
+      $_db.settlements,
+    ).filter((f) => f.groupId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_settlementsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2712,6 +3303,31 @@ class $$GroupsTableFilterComposer
           }) => $$ExpensesTableFilterComposer(
             $db: $db,
             $table: $db.expenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> settlementsRefs(
+    Expression<bool> Function($$SettlementsTableFilterComposer f) f,
+  ) {
+    final $$SettlementsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.settlements,
+      getReferencedColumn: (t) => t.groupId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SettlementsTableFilterComposer(
+            $db: $db,
+            $table: $db.settlements,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2842,6 +3458,31 @@ class $$GroupsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> settlementsRefs<T extends Object>(
+    Expression<T> Function($$SettlementsTableAnnotationComposer a) f,
+  ) {
+    final $$SettlementsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.settlements,
+      getReferencedColumn: (t) => t.groupId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SettlementsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.settlements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$GroupsTableTableManager
@@ -2857,7 +3498,11 @@ class $$GroupsTableTableManager
           $$GroupsTableUpdateCompanionBuilder,
           (Group, $$GroupsTableReferences),
           Group,
-          PrefetchHooks Function({bool groupMembersRefs, bool expensesRefs})
+          PrefetchHooks Function({
+            bool groupMembersRefs,
+            bool expensesRefs,
+            bool settlementsRefs,
+          })
         > {
   $$GroupsTableTableManager(_$AppDatabase db, $GroupsTable table)
     : super(
@@ -2915,12 +3560,17 @@ class $$GroupsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({groupMembersRefs = false, expensesRefs = false}) {
+              ({
+                groupMembersRefs = false,
+                expensesRefs = false,
+                settlementsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (groupMembersRefs) db.groupMembers,
                     if (expensesRefs) db.expenses,
+                    if (settlementsRefs) db.settlements,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -2963,6 +3613,27 @@ class $$GroupsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (settlementsRefs)
+                        await $_getPrefetchedData<
+                          Group,
+                          $GroupsTable,
+                          Settlement
+                        >(
+                          currentTable: table,
+                          referencedTable: $$GroupsTableReferences
+                              ._settlementsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$GroupsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).settlementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.groupId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -2983,7 +3654,11 @@ typedef $$GroupsTableProcessedTableManager =
       $$GroupsTableUpdateCompanionBuilder,
       (Group, $$GroupsTableReferences),
       Group,
-      PrefetchHooks Function({bool groupMembersRefs, bool expensesRefs})
+      PrefetchHooks Function({
+        bool groupMembersRefs,
+        bool expensesRefs,
+        bool settlementsRefs,
+      })
     >;
 typedef $$PersonsTableCreateCompanionBuilder =
     PersonsCompanion Function({
@@ -5801,6 +6476,403 @@ typedef $$ExpenseSplitsTableProcessedTableManager =
       ExpenseSplit,
       PrefetchHooks Function({bool expenseId, bool personId})
     >;
+typedef $$SettlementsTableCreateCompanionBuilder =
+    SettlementsCompanion Function({
+      required String id,
+      required String groupId,
+      required String payerId,
+      required String payeeId,
+      required String payerName,
+      required String payeeName,
+      required int amountCents,
+      required String currencyCode,
+      required DateTime date,
+      Value<int> rowid,
+    });
+typedef $$SettlementsTableUpdateCompanionBuilder =
+    SettlementsCompanion Function({
+      Value<String> id,
+      Value<String> groupId,
+      Value<String> payerId,
+      Value<String> payeeId,
+      Value<String> payerName,
+      Value<String> payeeName,
+      Value<int> amountCents,
+      Value<String> currencyCode,
+      Value<DateTime> date,
+      Value<int> rowid,
+    });
+
+final class $$SettlementsTableReferences
+    extends BaseReferences<_$AppDatabase, $SettlementsTable, Settlement> {
+  $$SettlementsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $GroupsTable _groupIdTable(_$AppDatabase db) =>
+      db.groups.createAlias('settlements__group_id__groups__id');
+
+  $$GroupsTableProcessedTableManager get groupId {
+    final $_column = $_itemColumn<String>('group_id')!;
+
+    final manager = $$GroupsTableTableManager(
+      $_db,
+      $_db.groups,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_groupIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SettlementsTableFilterComposer
+    extends Composer<_$AppDatabase, $SettlementsTable> {
+  $$SettlementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payerId => $composableBuilder(
+    column: $table.payerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payeeId => $composableBuilder(
+    column: $table.payeeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payerName => $composableBuilder(
+    column: $table.payerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payeeName => $composableBuilder(
+    column: $table.payeeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$GroupsTableFilterComposer get groupId {
+    final $$GroupsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.groupId,
+      referencedTable: $db.groups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GroupsTableFilterComposer(
+            $db: $db,
+            $table: $db.groups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SettlementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SettlementsTable> {
+  $$SettlementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payerId => $composableBuilder(
+    column: $table.payerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payeeId => $composableBuilder(
+    column: $table.payeeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payerName => $composableBuilder(
+    column: $table.payerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payeeName => $composableBuilder(
+    column: $table.payeeName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$GroupsTableOrderingComposer get groupId {
+    final $$GroupsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.groupId,
+      referencedTable: $db.groups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GroupsTableOrderingComposer(
+            $db: $db,
+            $table: $db.groups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SettlementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SettlementsTable> {
+  $$SettlementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get payerId =>
+      $composableBuilder(column: $table.payerId, builder: (column) => column);
+
+  GeneratedColumn<String> get payeeId =>
+      $composableBuilder(column: $table.payeeId, builder: (column) => column);
+
+  GeneratedColumn<String> get payerName =>
+      $composableBuilder(column: $table.payerName, builder: (column) => column);
+
+  GeneratedColumn<String> get payeeName =>
+      $composableBuilder(column: $table.payeeName, builder: (column) => column);
+
+  GeneratedColumn<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currencyCode => $composableBuilder(
+    column: $table.currencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  $$GroupsTableAnnotationComposer get groupId {
+    final $$GroupsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.groupId,
+      referencedTable: $db.groups,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$GroupsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.groups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SettlementsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SettlementsTable,
+          Settlement,
+          $$SettlementsTableFilterComposer,
+          $$SettlementsTableOrderingComposer,
+          $$SettlementsTableAnnotationComposer,
+          $$SettlementsTableCreateCompanionBuilder,
+          $$SettlementsTableUpdateCompanionBuilder,
+          (Settlement, $$SettlementsTableReferences),
+          Settlement,
+          PrefetchHooks Function({bool groupId})
+        > {
+  $$SettlementsTableTableManager(_$AppDatabase db, $SettlementsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SettlementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SettlementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SettlementsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> groupId = const Value.absent(),
+                Value<String> payerId = const Value.absent(),
+                Value<String> payeeId = const Value.absent(),
+                Value<String> payerName = const Value.absent(),
+                Value<String> payeeName = const Value.absent(),
+                Value<int> amountCents = const Value.absent(),
+                Value<String> currencyCode = const Value.absent(),
+                Value<DateTime> date = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SettlementsCompanion(
+                id: id,
+                groupId: groupId,
+                payerId: payerId,
+                payeeId: payeeId,
+                payerName: payerName,
+                payeeName: payeeName,
+                amountCents: amountCents,
+                currencyCode: currencyCode,
+                date: date,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String groupId,
+                required String payerId,
+                required String payeeId,
+                required String payerName,
+                required String payeeName,
+                required int amountCents,
+                required String currencyCode,
+                required DateTime date,
+                Value<int> rowid = const Value.absent(),
+              }) => SettlementsCompanion.insert(
+                id: id,
+                groupId: groupId,
+                payerId: payerId,
+                payeeId: payeeId,
+                payerName: payerName,
+                payeeName: payeeName,
+                amountCents: amountCents,
+                currencyCode: currencyCode,
+                date: date,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SettlementsTable, Settlement>(table),
+                  $$SettlementsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({groupId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (groupId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.groupId,
+                                referencedTable: $$SettlementsTableReferences
+                                    ._groupIdTable(db),
+                                referencedColumn: $$SettlementsTableReferences
+                                    ._groupIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SettlementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SettlementsTable,
+      Settlement,
+      $$SettlementsTableFilterComposer,
+      $$SettlementsTableOrderingComposer,
+      $$SettlementsTableAnnotationComposer,
+      $$SettlementsTableCreateCompanionBuilder,
+      $$SettlementsTableUpdateCompanionBuilder,
+      (Settlement, $$SettlementsTableReferences),
+      Settlement,
+      PrefetchHooks Function({bool groupId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5819,4 +6891,6 @@ class $AppDatabaseManager {
       $$ExpenseParticipantsTableTableManager(_db, _db.expenseParticipants);
   $$ExpenseSplitsTableTableManager get expenseSplits =>
       $$ExpenseSplitsTableTableManager(_db, _db.expenseSplits);
+  $$SettlementsTableTableManager get settlements =>
+      $$SettlementsTableTableManager(_db, _db.settlements);
 }
