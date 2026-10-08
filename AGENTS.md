@@ -10,6 +10,10 @@ Fuente funcional y visual de referencia:
 
 La aplicación permite administrar grupos, miembros, gastos compartidos, balances y pagos de liquidación.
 
+La visión de producto es organizar gastos de viajes entre amigos, especialmente viajes
+multidivisa. El objetivo final es que, al terminar un viaje, todas las cuentas queden
+equilibradas con la menor cantidad razonable de transferencias.
+
 ## Objetivo del proyecto
 
 Construir una aplicación Flutter funcional, local-first y preparada inicialmente para Android/Google Play Store, conservando las reglas de negocio del proyecto SwiftUI y adaptando su experiencia visual a Flutter con una estética inspirada en iOS/Apple.
@@ -29,6 +33,15 @@ No traducir SwiftUI línea por línea. Reutilizar conceptos, flujos y reglas de 
 - Los miembros archivados no aparecen entre los miembros activos, pero conservan su identidad en gastos y balances históricos.
 - Debe ser posible reactivar un miembro archivado.
 - No cambiar reglas de negocio sin actualizar la especificación y los tests correspondientes.
+- La entidad principal debe poder evolucionar de grupo a viaje, con moneda de referencia,
+  presupuesto, categorías, tipos de cambio, actividad y liquidaciones.
+- Un gasto debe conservar siempre el importe original, la moneda original, el tipo de cambio
+  aplicado, el importe convertido y la moneda de referencia.
+- El modelo debe soportar múltiples pagadores para un mismo gasto; no dividirlos artificialmente
+  en gastos separados.
+- Los cálculos financieros no deben depender de `double` como representación definitiva:
+  priorizar unidades mínimas (centavos) o un value object de dinero, con redondeo determinista.
+- Un cambio de cotización no modifica retroactivamente gastos existentes.
 
 ## Flujo principal
 
@@ -47,8 +60,8 @@ Inicio
 Detalle del grupo
   ├─ Agregar/editar/archivar/reactivar miembro
   ├─ Agregar gasto
-  │    ├─ Descripción, monto y fecha
-  │    ├─ Seleccionar pagador
+  │    ├─ Descripción, importe original, moneda y fecha
+  │    ├─ Seleccionar uno o varios pagadores
   │    ├─ Seleccionar participantes
   │    └─ Elegir división: equitativa, monto, porcentaje o partes
   ├─ Editar/eliminar gasto
@@ -89,6 +102,11 @@ Reglas:
 
 - Los nombres de grupos y miembros son obligatorios y se limpian de espacios innecesarios.
 - Un gasto requiere descripción, monto positivo, pagador y al menos un participante.
+- Un gasto puede tener uno o varios pagadores y debe conservar el importe original.
+- Cada viaje/grupo debe poder definir una moneda de referencia; ARS es la primera prioridad,
+  seguida por BRL y otras monedas sudamericanas.
+- Los tipos de cambio pueden ser automáticos, manuales o fijados para el viaje en el futuro,
+  pero cada gasto conserva la tasa concreta que utilizó.
 - Los montos usan dos decimales.
 - La división por monto debe sumar el total.
 - La división por porcentaje debe sumar 100%.

@@ -11,6 +11,9 @@ Migrar progresivamente la aplicación SwiftUI original a Flutter, conservando la
 - Publicación inicial enfocada en Android/Google Play Store.
 - Sin anuncios en la primera versión.
 - ARS como moneda inicial; modelo extensible para BRL y otras monedas.
+- Visión principal: viajes multidivisa con liquidación inteligente y balance final en cero.
+- El dinero debe migrar a unidades mínimas/value objects antes de ampliar balances y liquidaciones.
+- Los gastos deben soportar múltiples pagadores y conservar datos originales de conversión.
 - Los miembros con historial se archivan, no se eliminan físicamente.
 - Separación estricta entre UI, ViewModels, dominio y datos.
 
@@ -33,6 +36,8 @@ La persistencia local será una decisión de implementación de la Fase 1. El re
 - Elegir e integrar la solución de persistencia local.
 - Crear repositorios para grupos, miembros, gastos y liquidaciones.
 - Añadir configuración de moneda con ARS.
+- Diseñar dinero exacto, moneda de referencia, importe original y tipos de cambio.
+- Preparar gastos con múltiples pagadores sin dividir artificialmente el gasto.
 - Cubrir modelos, repositorios y cálculos con tests.
 
 Checkpoint: la app inicia, carga datos locales y `flutter test` pasa.
@@ -64,6 +69,7 @@ Checkpoint: crear gasto en cada modalidad y comprobar que la suma de participaci
 - Confirmar pagos.
 - Eliminar pagos confirmados y recalcular.
 - Mostrar estados sin deudas.
+- Resolver balances por moneda de referencia y simplificar transferencias con suma neta cero.
 
 Checkpoint: flujo completo grupo → miembros → gasto → balance → liquidación confirmada.
 
@@ -85,6 +91,8 @@ Checkpoint: build Android release verificable y flujo principal probado en dispo
 | Elegir una base local difícil de migrar | Alto | Aislarla detrás de repositorios desde el inicio |
 | Borrar miembros rompe historial | Alto | Archivado lógico y referencias estables |
 | Diferencias de redondeo entre Swift y Dart | Alto | Tests de equivalencia y redondeo centralizado |
+| Errores por representar dinero con `double` | Alto | Value object/centavos y tests de suma exacta |
+| Multiplicidad de monedas y pagadores | Alto | Separar importe original, conversión y contribuciones |
 | Traducir SwiftUI literalmente | Medio | Reutilizar flujos y reglas, no estructura de widgets |
 | Priorizar estética antes que flujo | Medio | Completar cada fase vertical antes del pulido visual |
 | No poder probar iOS ahora | Medio | Priorizar Android y mantener patrones compatibles con iOS |

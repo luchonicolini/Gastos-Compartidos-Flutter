@@ -4,7 +4,10 @@
 
 Adaptar la aplicación iOS original `Gastos-Compartidos` —desarrollada en SwiftUI y SwiftData— a Flutter, conservando sus reglas de negocio, flujos principales y personalidad visual inspirada en iOS.
 
-La aplicación permitirá crear grupos, administrar integrantes, registrar gastos, dividirlos de distintas maneras y calcular cómo saldar las cuentas entre los miembros.
+La aplicación permitirá organizar viajes, administrar integrantes, registrar gastos en distintas monedas, dividirlos de distintas maneras y calcular cómo saldar las cuentas entre los miembros.
+
+El diferencial del producto es la combinación de viajes, multidivisa y liquidación inteligente:
+el usuario carga los gastos durante el viaje y al final recibe una solución clara para que nadie le deba dinero a nadie.
 
 La primera versión será local-first: los datos se guardarán en el dispositivo y la app debe funcionar sin conexión. La arquitectura debe dejar aislada la persistencia para poder agregar sincronización en una etapa futura sin rehacer la UI.
 
@@ -23,6 +26,8 @@ El resultado esperado es que pueda pasar de un grupo vacío a una cuenta saldada
 | gastos | Registrar, editar y eliminar gastos | grupos, miembros, validaciones |
 | balances | Calcular saldos individuales según los gastos | gastos, miembros |
 | liquidaciones | Sugerir, confirmar y eliminar pagos | balances, miembros, persistencia |
+| monedas | Moneda de referencia, importe original, conversión y tipo de cambio | gastos, persistencia |
+| viajes | Datos de destino, fechas, presupuesto y configuración del viaje | grupos, monedas |
 | experiencia-ios | Navegación, componentes, accesibilidad y estética Apple | todos los módulos de interfaz |
 
 Orden recomendado: grupos → miembros → gastos → balances → liquidaciones → experiencia-ios/pulido.
@@ -46,7 +51,8 @@ Detalle del grupo
   ├─ Editar/eliminar miembro
   ├─ Agregar gasto
   │    ├─ Descripción, monto y fecha
-  │    ├─ Seleccionar pagador
+  │    ├─ Seleccionar moneda original y tipo de cambio
+  │    ├─ Seleccionar uno o varios pagadores
   │    ├─ Seleccionar participantes
   │    └─ Elegir tipo de división
   ├─ Editar/eliminar gasto
@@ -79,6 +85,7 @@ Detalle del grupo
 - La descripción es obligatoria.
 - El monto debe ser numérico y mayor que cero.
 - Debe existir un pagador.
+- Un gasto puede tener uno o varios pagadores con importes parciales que sumen el importe original.
 - Debe existir al menos un participante.
 - Tipos de división soportados:
   - equitativa;
@@ -90,6 +97,17 @@ Detalle del grupo
 - Para monto fijo, la suma debe coincidir con el total.
 - Para porcentaje, la suma debe ser 100%.
 - Para partes, la suma debe ser mayor que cero.
+- Nunca se reemplaza el importe original por el convertido.
+- Un gasto multidivisa conserva importe original, moneda original, tipo de cambio, importe convertido y moneda de referencia.
+- Los cálculos financieros deben utilizar una representación exacta en unidades mínimas o un value object equivalente; `double` no es la representación final del dinero.
+
+### Viajes y monedas
+
+- Un grupo debe poder evolucionar a un viaje sin romper sus referencias históricas.
+- La moneda de referencia se configura por viaje/grupo.
+- La primera prioridad de monedas es ARS y BRL; el modelo debe aceptar cualquier código ISO válido.
+- Las tasas pueden ser manuales o automáticas en el futuro.
+- Modificar la cotización actual no modifica gastos ya registrados.
 
 ### Balances y liquidaciones
 
@@ -159,7 +177,9 @@ La validación móvil se agregará cuando haya un simulador o dispositivo iOS/An
 - Separar modelos, servicios y estado de la UI.
 - Elegir e implementar persistencia local.
 - Mantener todos los cálculos actuales cubiertos por tests.
-- Preparar configuración de moneda con ARS como valor inicial y BRL como futura extensión.
+- Preparar configuración de moneda con ARS como valor inicial y BRL como segunda prioridad.
+- Reemplazar el uso financiero definitivo de `double` por dinero exacto en unidades mínimas/value objects.
+- Diseñar el gasto para múltiples pagadores y conservar datos originales de conversión.
 
 ### Fase 2 — Grupos y miembros
 
@@ -172,8 +192,9 @@ La validación móvil se agregará cuando haya un simulador o dispositivo iOS/An
 ### Fase 3 — Gastos
 
 - Formulario de gasto.
-- Pagador y participantes.
+- Uno o varios pagadores y participantes.
 - Las cuatro formas de división.
+- Importe original, moneda y conversión a moneda de referencia.
 - Edición, eliminación y validaciones.
 
 ### Fase 4 — Balances y liquidaciones
@@ -199,7 +220,8 @@ La validación móvil se agregará cuando haya un simulador o dispositivo iOS/An
 - Sin backend.
 - Sin anuncios en la primera versión.
 - Objetivo de distribución inicial: Android/Google Play Store.
-- Moneda inicial: pesos argentinos (ARS); el modelo debe permitir agregar reales brasileños (BRL) posteriormente.
+- Primera moneda prioritaria: pesos argentinos (ARS), con BRL y otras monedas previstas desde el modelo inicial.
+- Las funciones avanzadas de tasas automáticas, tickets, QR, mapas, estadísticas e invitaciones quedan para etapas posteriores.
 - Sin cambiar las reglas de negocio sin actualizar primero esta especificación y sus tests.
 
 ## Preguntas abiertas
