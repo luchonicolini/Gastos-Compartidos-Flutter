@@ -41,4 +41,31 @@ void main() {
     expect(groups.single.members.first.name, 'Luciano');
     expect(groups.single.members.last.isArchived, isTrue);
   });
+
+  test('actualiza miembros y elimina un grupo completo', () async {
+    final group = Group(
+      id: 'group-2',
+      name: 'Fin de semana',
+      members: [Person(id: 'person-3', name: 'Luciano')],
+    );
+
+    await repository.save(group);
+    await repository.save(
+      group.copyWith(
+        members: [
+          group.members.single.copyWith(isArchived: true),
+          Person(id: 'person-4', name: 'Sofía'),
+        ],
+      ),
+    );
+
+    var groups = await repository.getAll();
+    expect(groups.single.members, hasLength(2));
+    expect(groups.single.members.first.isArchived, isFalse);
+    expect(groups.single.members.last.name, 'Luciano');
+
+    await repository.delete(group.id);
+    groups = await repository.getAll();
+    expect(groups, isEmpty);
+  });
 }
