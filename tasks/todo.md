@@ -7,7 +7,7 @@
 - [x] Agregar estado de miembro archivado y reglas de conservación histórica.
 - [x] Extraer validaciones y cálculos de dominio en servicios testeables.
 - [x] Crear configuración de moneda con ARS y extensión prevista para BRL.
-- [ ] Agregar repositorios locales para grupos, miembros, gastos y liquidaciones.
+- [x] Agregar repositorios locales para grupos, miembros, gastos y liquidaciones.
 - [x] Crear value object de dinero exacto en unidades mínimas.
 - [x] Crear modelo de moneda, moneda de referencia y tipo de cambio.
 - [x] Adaptar gastos para múltiples pagadores sin perder el importe original.
@@ -46,6 +46,11 @@
 - [x] Implementar confirmación de liquidación.
 - [x] Implementar eliminación de liquidación.
 - [x] Implementar estado de cuentas saldadas.
+- [x] Verificar generación Drift y registro persistente de `Settlements`.
+- [x] Unificar `SettlementPayment` y Repository con importes exactos en centavos.
+- [x] Usar siempre `referenceCurrency` del grupo en balances y liquidaciones.
+- [x] Cubrir balances, liquidaciones y persistencia multidivisa.
+- [x] Ejecutar `flutter test`, `dart analyze` y build release.
 
 ## Fase 5 — Diseño y publicación
 

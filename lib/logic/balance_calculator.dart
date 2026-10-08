@@ -5,6 +5,7 @@ import '../domain/models/split_type.dart';
 import '../domain/models/settlement_payment.dart';
 import '../domain/models/member_balance.dart';
 import '../domain/models/money.dart';
+import '../domain/models/currency.dart';
 
 extension DoubleRounding on double {
   double roundToPlaces(int places) {
@@ -25,16 +26,17 @@ class BalanceCalculator {
     _processExpenses(group.expenses, currentMemberIds, balances);
 
     // 2. Procesar pagos de liquidación
-    _processSettlementPayments(group.settlementPayments, currentMemberIds, balances);
+    _processSettlementPayments(
+      group.settlementPayments,
+      currentMemberIds,
+      balances,
+      group.referenceCurrency,
+    );
 
     // 3. Convertir a lista de MemberBalance ordenada por nombre
     final result = group.members.map((member) {
       final balance = (balances[member.id] ?? 0) / 100;
-      return MemberBalance(
-        id: member.id,
-        name: member.name,
-        balance: balance,
-      );
+      return MemberBalance(id: member.id, name: member.name, balance: balance);
     }).toList();
 
     result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -78,13 +80,22 @@ class BalanceCalculator {
     List<SettlementPayment> payments,
     Set<String> currentMemberIds,
     Map<String, int> balances,
+    Currency referenceCurrency,
   ) {
     for (final payment in payments) {
+      if (payment.currency != referenceCurrency) {
+        throw ArgumentError(
+          'La liquidación ${payment.id} no usa la moneda de referencia del grupo.',
+        );
+      }
+      final amountCents = payment.money.cents;
       if (currentMemberIds.contains(payment.payerId)) {
-        balances[payment.payerId] = (balances[payment.payerId] ?? 0) + (payment.amount * 100).round();
+        balances[payment.payerId] =
+            (balances[payment.payerId] ?? 0) + amountCents;
       }
       if (currentMemberIds.contains(payment.payeeId)) {
-        balances[payment.payeeId] = (balances[payment.payeeId] ?? 0) - (payment.amount * 100).round();
+        balances[payment.payeeId] =
+            (balances[payment.payeeId] ?? 0) - amountCents;
       }
     }
   }
@@ -93,8 +104,10 @@ class BalanceCalculator {
     required Expense expense,
     required List<Person> participants,
   }) {
-    return calculateShareCents(expense: expense, participants: participants)
-        .map((key, value) => MapEntry(key, value / 100));
+    return calculateShareCents(
+      expense: expense,
+      participants: participants,
+    ).map((key, value) => MapEntry(key, value / 100));
   }
 
   static Map<String, int> calculateShareCents({
@@ -208,7 +221,8 @@ class BalanceCalculator {
 
     for (final p in participants) {
       final participantShares = details[p.id] ?? 0.0;
-      final amount = (expenseAmountCents * (participantShares / totalShares)).round();
+      final amount = (expenseAmountCents * (participantShares / totalShares))
+          .round();
       sharesToDebit[p.id] = amount;
       calculatedSum += amount;
     }

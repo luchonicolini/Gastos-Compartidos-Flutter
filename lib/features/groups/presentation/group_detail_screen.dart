@@ -4,6 +4,7 @@ import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/expense.dart';
 import '../../../domain/models/currency.dart';
+import '../../../domain/models/money.dart';
 import '../../../domain/models/member_balance.dart';
 import '../../../domain/models/person.dart';
 import '../../../domain/models/settlement_payment.dart';
@@ -12,7 +13,11 @@ import '../../../logic/settlement_calculator.dart';
 import '../../expenses/presentation/expense_form_sheet.dart';
 
 class GroupDetailScreen extends StatefulWidget {
-  const GroupDetailScreen({super.key, required this.group, required this.repository});
+  const GroupDetailScreen({
+    super.key,
+    required this.group,
+    required this.repository,
+  });
 
   final Group group;
   final LocalGroupRepository repository;
@@ -57,7 +62,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       return;
     }
 
-    await _saveGroup(_group.copyWith(members: [..._group.members, Person(name: name)]));
+    await _saveGroup(
+      _group.copyWith(
+        members: [
+          ..._group.members,
+          Person(name: name),
+        ],
+      ),
+    );
   }
 
   Future<void> _toggleArchive(Person member) async {
@@ -68,15 +80,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         title: Text('${member.isArchived ? 'Reactivar' : 'Archivar'} miembro'),
         content: Text('¿Querés $action a ${member.name}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: Text(member.isArchived ? 'Reactivar' : 'Archivar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(member.isArchived ? 'Reactivar' : 'Archivar'),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
 
     final members = _group.members
-        .map((item) => item.id == member.id ? item.copyWith(isArchived: !item.isArchived) : item)
+        .map(
+          (item) => item.id == member.id
+              ? item.copyWith(isArchived: !item.isArchived)
+              : item,
+        )
         .toList();
     await _saveGroup(_group.copyWith(members: members));
   }
@@ -100,7 +122,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       builder: (_) => ExpenseFormSheet(group: _group, initialExpense: expense),
     );
     if (updated == null) return;
-    final expenses = _group.expenses.map((item) => item.id == updated.id ? updated : item).toList();
+    final expenses = _group.expenses
+        .map((item) => item.id == updated.id ? updated : item)
+        .toList();
     await _saveGroup(_group.copyWith(expenses: expenses));
   }
 
@@ -111,13 +135,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         title: const Text('Eliminar gasto'),
         content: Text('¿Querés eliminar “${expense.description}”?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
-    await _saveGroup(_group.copyWith(expenses: _group.expenses.where((item) => item.id != expense.id).toList()));
+    await _saveGroup(
+      _group.copyWith(
+        expenses: _group.expenses
+            .where((item) => item.id != expense.id)
+            .toList(),
+      ),
+    );
   }
 
   Future<void> _confirmSettlement(FormattedSettlement settlement) async {
@@ -125,10 +161,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar pago'),
-        content: Text('${settlement.payerName} le pagó a ${settlement.payeeName} ${settlement.formattedAmount}. ¿Querés registrarlo?'),
+        content: Text(
+          '${settlement.payerName} le pagó a ${settlement.payeeName} ${settlement.formattedAmount}. ¿Querés registrarlo?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar'),
+          ),
         ],
       ),
     );
@@ -137,13 +181,16 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     final payment = SettlementPayment(
       payerId: settlement.payerId,
       payeeId: settlement.payeeId,
-      amount: settlement.amount,
+      money: Money.fromDecimal(settlement.amount, _group.referenceCurrency),
       groupId: _group.id,
       payerName: settlement.payerName,
       payeeName: settlement.payeeName,
-      currency: _group.referenceCurrency,
     );
-    await _saveGroup(_group.copyWith(settlementPayments: [..._group.settlementPayments, payment]));
+    await _saveGroup(
+      _group.copyWith(
+        settlementPayments: [..._group.settlementPayments, payment],
+      ),
+    );
   }
 
   Future<void> _deleteSettlement(SettlementPayment payment) async {
@@ -151,35 +198,56 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar pago registrado'),
-        content: Text('¿Querés quitar el pago de ${payment.payerName} a ${payment.payeeName}?'),
+        content: Text(
+          '¿Querés quitar el pago de ${payment.payerName} a ${payment.payeeName}?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
-    await _saveGroup(_group.copyWith(
-      settlementPayments: _group.settlementPayments.where((item) => item.id != payment.id).toList(),
-    ));
+    await _saveGroup(
+      _group.copyWith(
+        settlementPayments: _group.settlementPayments
+            .where((item) => item.id != payment.id)
+            .toList(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeMembers = _group.members.where((member) => !member.isArchived).toList();
-    final archivedMembers = _group.members.where((member) => member.isArchived).toList();
+    final activeMembers = _group.members
+        .where((member) => !member.isArchived)
+        .toList();
+    final archivedMembers = _group.members
+        .where((member) => member.isArchived)
+        .toList();
     final balances = BalanceCalculator.calculateMemberBalances(_group);
     final pendingSettlements = SettlementCalculator.suggestFormattedSettlements(
       balances,
-      currencySymbol: _group.referenceCurrency.symbol,
+      referenceCurrency: _group.referenceCurrency,
     );
-    final isSettled = balances.isNotEmpty && balances.every((balance) => balance.isNeutral);
+    final isSettled =
+        balances.isNotEmpty && balances.every((balance) => balance.isNeutral);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_group.name),
         actions: [
-          IconButton(onPressed: _addExpense, icon: const Icon(Icons.add_card_outlined), tooltip: 'Agregar gasto'),
+          IconButton(
+            onPressed: _addExpense,
+            icon: const Icon(Icons.add_card_outlined),
+            tooltip: 'Agregar gasto',
+          ),
         ],
       ),
       body: ListView(
@@ -187,22 +255,46 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
         children: [
           _SummaryCard(group: _group),
           const SizedBox(height: 24),
-          Text('¿Cómo vamos?', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            '¿Cómo vamos?',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           if (_group.members.isEmpty)
-            const _InfoTile(icon: Icons.insights_outlined, text: 'Agregá miembros para ver balances.')
+            const _InfoTile(
+              icon: Icons.insights_outlined,
+              text: 'Agregá miembros para ver balances.',
+            )
           else if (_group.expenses.isEmpty)
-            const _InfoTile(icon: Icons.insights_outlined, text: 'Agregá un gasto para calcular balances.')
+            const _InfoTile(
+              icon: Icons.insights_outlined,
+              text: 'Agregá un gasto para calcular balances.',
+            )
           else ...[
             if (isSettled)
               const _SettledCard()
             else
-              ...balances.map((balance) => _BalanceTile(balance: balance, currency: _group.referenceCurrency)),
+              ...balances.map(
+                (balance) => _BalanceTile(
+                  balance: balance,
+                  currency: _group.referenceCurrency,
+                ),
+              ),
             const SizedBox(height: 16),
-            Text('Pagos sugeridos', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Pagos sugeridos',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             if (pendingSettlements.isEmpty)
-              const _InfoTile(icon: Icons.check_circle_outline, text: 'No hay pagos pendientes.')
+              const _InfoTile(
+                icon: Icons.check_circle_outline,
+                text: 'No hay pagos pendientes.',
+              )
             else
               ...pendingSettlements.map(
                 (settlement) => _SuggestedSettlementTile(
@@ -213,42 +305,87 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
           ],
           if (_group.settlementPayments.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text('Pagos registrados', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Pagos registrados',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             ..._group.settlementPayments.map(
-              (payment) => _SettlementHistoryTile(payment: payment, onDelete: () => _deleteSettlement(payment)),
+              (payment) => _SettlementHistoryTile(
+                payment: payment,
+                onDelete: () => _deleteSettlement(payment),
+              ),
             ),
           ],
           const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Miembros', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              Text('${activeMembers.length} activos', style: TextStyle(color: Colors.grey.shade600)),
+              Text(
+                'Miembros',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${activeMembers.length} activos',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           if (activeMembers.isEmpty)
-            const _InfoTile(icon: Icons.person_off_outlined, text: 'No hay miembros activos.')
+            const _InfoTile(
+              icon: Icons.person_off_outlined,
+              text: 'No hay miembros activos.',
+            )
           else
-            ...activeMembers.map((member) => _MemberTile(member: member, onToggle: () => _toggleArchive(member))),
+            ...activeMembers.map(
+              (member) => _MemberTile(
+                member: member,
+                onToggle: () => _toggleArchive(member),
+              ),
+            ),
           if (archivedMembers.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Text('Archivados', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              'Archivados',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            ...archivedMembers.map((member) => _MemberTile(member: member, onToggle: () => _toggleArchive(member))),
+            ...archivedMembers.map(
+              (member) => _MemberTile(
+                member: member,
+                onToggle: () => _toggleArchive(member),
+              ),
+            ),
           ],
           const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Gastos', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              Text('${_group.expenses.length}', style: TextStyle(color: Colors.grey.shade600)),
+              Text(
+                'Gastos',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${_group.expenses.length}',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           if (_group.expenses.isEmpty)
-            const _InfoTile(icon: Icons.receipt_long_outlined, text: 'Todavía no hay gastos.')
+            const _InfoTile(
+              icon: Icons.receipt_long_outlined,
+              text: 'Todavía no hay gastos.',
+            )
           else
             ..._group.expenses.map(
               (expense) => _ExpenseTile(
@@ -282,16 +419,30 @@ class _SummaryCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-              child: Icon(Icons.groups_outlined, size: 28, color: Theme.of(context).colorScheme.primary),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.12),
+              child: Icon(
+                Icons.groups_outlined,
+                size: 28,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             const SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(group.name, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  group.name,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
-                Text('Creado localmente', style: TextStyle(color: Colors.grey.shade600)),
+                Text(
+                  'Creado localmente',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
               ],
             ),
           ],
@@ -312,9 +463,13 @@ class _MemberTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: CircleAvatar(child: Text(member.name.characters.first.toUpperCase())),
+        leading: CircleAvatar(
+          child: Text(member.name.characters.first.toUpperCase()),
+        ),
         title: Text(member.name),
-        subtitle: member.isArchived ? const Text('Conserva su historial') : null,
+        subtitle: member.isArchived
+            ? const Text('Conserva su historial')
+            : null,
         trailing: TextButton(
           onPressed: onToggle,
           child: Text(member.isArchived ? 'Reactivar' : 'Archivar'),
@@ -332,7 +487,9 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(child: ListTile(leading: Icon(icon), title: Text(text)));
+    return Card(
+      child: ListTile(leading: Icon(icon), title: Text(text)),
+    );
   }
 }
 
@@ -347,13 +504,15 @@ class _BalanceTile extends StatelessWidget {
     final color = balance.isCreditor
         ? Colors.green.shade700
         : balance.isDebtor
-            ? Theme.of(context).colorScheme.error
-            : Colors.grey.shade700;
+        ? Theme.of(context).colorScheme.error
+        : Colors.grey.shade700;
     final sign = balance.balance > 0 ? '+' : '';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: CircleAvatar(child: Text(balance.name.characters.first.toUpperCase())),
+        leading: CircleAvatar(
+          child: Text(balance.name.characters.first.toUpperCase()),
+        ),
         title: Text(balance.name),
         trailing: Text(
           '$sign${currency.symbol}${balance.balance.abs().toStringAsFixed(2)}',
@@ -365,7 +524,10 @@ class _BalanceTile extends StatelessWidget {
 }
 
 class _SuggestedSettlementTile extends StatelessWidget {
-  const _SuggestedSettlementTile({required this.settlement, required this.onConfirm});
+  const _SuggestedSettlementTile({
+    required this.settlement,
+    required this.onConfirm,
+  });
 
   final FormattedSettlement settlement;
   final VoidCallback onConfirm;
@@ -378,7 +540,10 @@ class _SuggestedSettlementTile extends StatelessWidget {
         leading: const Icon(Icons.arrow_forward_rounded, color: Colors.orange),
         title: Text('${settlement.payerName} → ${settlement.payeeName}'),
         subtitle: Text(settlement.formattedAmount),
-        trailing: TextButton(onPressed: onConfirm, child: const Text('Confirmar')),
+        trailing: TextButton(
+          onPressed: onConfirm,
+          child: const Text('Confirmar'),
+        ),
       ),
     );
   }
@@ -401,8 +566,14 @@ class _SettlementHistoryTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('${payment.currency.symbol}${payment.amount.toStringAsFixed(2)}'),
-            IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline), tooltip: 'Eliminar pago'),
+            Text(
+              '${payment.currency.symbol}${payment.amount.toStringAsFixed(2)}',
+            ),
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Eliminar pago',
+            ),
           ],
         ),
       ),
@@ -419,7 +590,10 @@ class _SettledCard extends StatelessWidget {
       color: Colors.green.withValues(alpha: 0.12),
       child: const ListTile(
         leading: Icon(Icons.celebration_outlined, color: Colors.green),
-        title: Text('Viaje saldado', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Viaje saldado',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text('Nadie le debe dinero a nadie.'),
       ),
     );
@@ -427,7 +601,11 @@ class _SettledCard extends StatelessWidget {
 }
 
 class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({required this.expense, required this.onEdit, required this.onDelete});
+  const _ExpenseTile({
+    required this.expense,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final Expense expense;
   final VoidCallback onEdit;
@@ -448,7 +626,10 @@ class _ExpenseTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('\$${expense.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              '\$${expense.amount.toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'edit') onEdit();
@@ -495,14 +676,33 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)))),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
-          Text('Agregar miembro', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Agregar miembro',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
@@ -510,7 +710,12 @@ class _MemberFormSheetState extends State<_MemberFormSheet> {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(labelText: 'Nombre', hintText: 'Ej. Ana', errorText: _errorText, prefixIcon: const Icon(Icons.person_outline)),
+            decoration: InputDecoration(
+              labelText: 'Nombre',
+              hintText: 'Ej. Ana',
+              errorText: _errorText,
+              prefixIcon: const Icon(Icons.person_outline),
+            ),
           ),
           const SizedBox(height: 20),
           FilledButton(onPressed: _submit, child: const Text('Agregar')),

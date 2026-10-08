@@ -23,29 +23,32 @@ void main() {
     await appDatabase.close();
   });
 
-  test('guarda y recupera un grupo con miembros activos y archivados', () async {
-    final group = Group(
-      id: 'group-1',
-      name: 'Viaje a Brasil',
-      creationDate: DateTime(2026, 10, 8),
-      iconName: 'flight',
-      colorHex: '#2563EB',
-      members: [
-        Person(id: 'person-1', name: 'Luciano'),
-        Person(id: 'person-2', name: 'Ana', isArchived: true),
-      ],
-    );
+  test(
+    'guarda y recupera un grupo con miembros activos y archivados',
+    () async {
+      final group = Group(
+        id: 'group-1',
+        name: 'Viaje a Brasil',
+        creationDate: DateTime(2026, 10, 8),
+        iconName: 'flight',
+        colorHex: '#2563EB',
+        members: [
+          Person(id: 'person-1', name: 'Luciano'),
+          Person(id: 'person-2', name: 'Ana', isArchived: true),
+        ],
+      );
 
-    await repository.save(group);
-    final groups = await repository.getAll();
+      await repository.save(group);
+      final groups = await repository.getAll();
 
-    expect(groups, hasLength(1));
-    expect(groups.single.id, 'group-1');
-    expect(groups.single.name, 'Viaje a Brasil');
-    expect(groups.single.members, hasLength(2));
-    expect(groups.single.members.first.name, 'Luciano');
-    expect(groups.single.members.last.isArchived, isTrue);
-  });
+      expect(groups, hasLength(1));
+      expect(groups.single.id, 'group-1');
+      expect(groups.single.name, 'Viaje a Brasil');
+      expect(groups.single.members, hasLength(2));
+      expect(groups.single.members.first.name, 'Luciano');
+      expect(groups.single.members.last.isArchived, isTrue);
+    },
+  );
 
   test('actualiza miembros y elimina un grupo completo', () async {
     final group = Group(
@@ -123,8 +126,14 @@ void main() {
           referenceCurrency: Currency.ars,
           exchangeRate: 250,
           payers: [
-            ExpensePayer(person: luciano, amount: Money.fromString('60000', Currency.ars)),
-            ExpensePayer(person: ana, amount: Money.fromString('27500', Currency.ars)),
+            ExpensePayer(
+              person: luciano,
+              amount: Money.fromString('60000', Currency.ars),
+            ),
+            ExpensePayer(
+              person: ana,
+              amount: Money.fromString('27500', Currency.ars),
+            ),
           ],
           participants: [luciano, ana],
         ),
@@ -139,7 +148,10 @@ void main() {
     expect(expense.referenceCurrency, Currency.ars);
     expect(expense.exchangeRate, 250);
     expect(expense.payers, hasLength(2));
-    expect(expense.payers.first.amount.cents + expense.payers.last.amount.cents, 8750000);
+    expect(
+      expense.payers.first.amount.cents + expense.payers.last.amount.cents,
+      8750000,
+    );
   });
 
   test('persiste liquidaciones confirmadas', () async {
@@ -156,9 +168,8 @@ void main() {
           payeeId: luciano.id,
           payerName: ana.name,
           payeeName: luciano.name,
-          amount: 50,
+          money: Money.fromString('50', Currency.ars),
           groupId: 'group-5',
-          currency: Currency.ars,
         ),
       ],
     );
@@ -169,5 +180,37 @@ void main() {
     expect(loaded.settlementPayments, hasLength(1));
     expect(loaded.settlementPayments.single.payerId, ana.id);
     expect(loaded.settlementPayments.single.amount, 50);
+    expect(loaded.settlementPayments.single.money.cents, 5000);
+  });
+
+  test('persiste una liquidación en la moneda de referencia BRL', () async {
+    final luciano = Person(id: 'person-11', name: 'Luciano');
+    final ana = Person(id: 'person-12', name: 'Ana');
+    final group = Group(
+      id: 'group-6',
+      name: 'Brasil',
+      referenceCurrency: Currency.brl,
+      members: [luciano, ana],
+      settlementPayments: [
+        SettlementPayment(
+          id: 'settlement-brl',
+          payerId: ana.id,
+          payeeId: luciano.id,
+          payerName: ana.name,
+          payeeName: luciano.name,
+          money: Money.fromString('12.34', Currency.brl),
+          groupId: 'group-6',
+        ),
+      ],
+    );
+
+    await repository.save(group);
+    final loaded = (await repository.getAll()).single;
+
+    expect(loaded.referenceCurrency, Currency.brl);
+    expect(
+      loaded.settlementPayments.single.money,
+      Money.fromString('12.34', Currency.brl),
+    );
   });
 }
