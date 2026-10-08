@@ -11,7 +11,6 @@ class ExpensePayer {
   final Person person;
   final Money amount;
 }
-
 class Expense {
   final String id;
   final String description;
@@ -106,4 +105,3 @@ class Expense {
     );
   }
 }
-
