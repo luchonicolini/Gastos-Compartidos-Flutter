@@ -1,107 +1,76 @@
 import 'package:intl/intl.dart';
+
+import '../domain/models/currency.dart';
 import '../domain/models/member_balance.dart';
+import '../domain/models/money.dart';
 import '../domain/models/settlement_payment.dart';
-import 'balance_calculator.dart';
 
 class SettlementCalculator {
   static List<FormattedSettlement> suggestFormattedSettlements(
     List<MemberBalance> memberBalances, {
     String? currencySymbol,
   }) {
-    final balancesToSettle = memberBalances
-        .where((m) => m.balance.abs() > 0.01)
-        .map((m) => MemberBalance(id: m.id, name: m.name, balance: m.balance))
+    final debtors = memberBalances
+        .where((member) => member.balance < -0.01)
+        .map((member) => _BalanceInCents(
+              id: member.id,
+              name: member.name,
+              cents: Money.fromDecimal(member.balance.abs(), Currency.ars).cents,
+            ))
+        .toList();
+    final creditors = memberBalances
+        .where((member) => member.balance > 0.01)
+        .map((member) => _BalanceInCents(
+              id: member.id,
+              name: member.name,
+              cents: Money.fromDecimal(member.balance, Currency.ars).cents,
+            ))
         .toList();
 
-    if (balancesToSettle.isEmpty) return [];
-
-    final tempDebtors = balancesToSettle
-        .where((m) => m.balance < -0.01)
-        .toList()
-      ..sort((a, b) => a.balance.compareTo(b.balance)); // más endeudados primero
-
-    final tempCreditors = balancesToSettle
-        .where((m) => m.balance > 0.01)
-        .toList()
-      ..sort((a, b) => b.balance.compareTo(a.balance)); // a los que más se les debe primero
-
     final settlements = <FormattedSettlement>[];
-    final currencyFormatter = NumberFormatter(symbol: currencySymbol ?? '\$');
+    final currencyFormatter = NumberFormatter(symbol: currencySymbol ?? r'$');
+    while (debtors.isNotEmpty && creditors.isNotEmpty) {
+      debtors.sort((a, b) => b.cents.compareTo(a.cents));
+      creditors.sort((a, b) => b.cents.compareTo(a.cents));
+      final debtor = debtors.removeAt(0);
+      final creditor = creditors.removeAt(0);
+      final amountCents = debtor.cents < creditor.cents ? debtor.cents : creditor.cents;
+      final amount = amountCents / 100;
 
-    while (tempDebtors.isNotEmpty && tempCreditors.isNotEmpty) {
-      final debtor = tempDebtors.removeAt(0);
-      final creditor = tempCreditors.removeAt(0);
+      settlements.add(
+        FormattedSettlement(
+          payerName: debtor.name,
+          payeeName: creditor.name,
+          amount: amount,
+          formattedAmount: currencyFormatter.format(amount),
+          payerId: debtor.id,
+          payeeId: creditor.id,
+        ),
+      );
 
-      final amountToTransfer = (debtor.balance.abs() < creditor.balance
-              ? debtor.balance.abs()
-              : creditor.balance)
-          .roundToPlaces(2);
-
-      if (amountToTransfer < 0.01) {
-        if (debtor.balance.abs() >= 0.01) {
-          _insertSorted(debtor, tempDebtors, (a, b) => a.balance <= b.balance);
-        }
-        if (creditor.balance >= 0.01) {
-          _insertSorted(creditor, tempCreditors, (a, b) => a.balance >= b.balance);
-        }
-        continue;
-      }
-
-      final formattedStr = currencyFormatter.format(amountToTransfer);
-
-      settlements.add(FormattedSettlement(
-        payerName: debtor.name,
-        payeeName: creditor.name,
-        amount: amountToTransfer,
-        formattedAmount: formattedStr,
-        payerId: debtor.id,
-        payeeId: creditor.id,
-      ));
-
-      debtor.balance = (debtor.balance + amountToTransfer).roundToPlaces(2);
-      creditor.balance = (creditor.balance - amountToTransfer).roundToPlaces(2);
-
-      if (debtor.balance.abs() >= 0.01) {
-        _insertSorted(debtor, tempDebtors, (a, b) => a.balance <= b.balance);
-      }
-      if (creditor.balance >= 0.01) {
-        _insertSorted(creditor, tempCreditors, (a, b) => a.balance >= b.balance);
-      }
+      debtor.cents -= amountCents;
+      creditor.cents -= amountCents;
+      if (debtor.cents > 0) debtors.add(debtor);
+      if (creditor.cents > 0) creditors.add(creditor);
     }
-
     return settlements;
   }
+}
+class _BalanceInCents {
+  _BalanceInCents({required this.id, required this.name, required this.cents});
 
-  static void _insertSorted<T>(
-    T element,
-    List<T> list,
-    bool Function(T a, T b) condition,
-  ) {
-    final index = list.indexWhere((item) => condition(item, element));
-    if (index >= 0) {
-      list.insert(index, element);
-    } else {
-      list.append(element);
-    }
-  }
+  final String id;
+  final String name;
+  int cents;
 }
 
 class NumberFormatter {
   final String symbol;
   late final NumberFormat _formatter;
 
-  NumberFormatter({this.symbol = '\$'}) {
-    _formatter = NumberFormat.currency(
-      symbol: symbol,
-      decimalDigits: 2,
-    );
+  NumberFormatter({this.symbol = r'$'}) {
+    _formatter = NumberFormat.currency(symbol: symbol, decimalDigits: 2);
   }
 
-  String format(double amount) {
-    return _formatter.format(amount);
-  }
-}
-
-extension ListAppend<T> on List<T> {
-  void append(T element) => add(element);
+  String format(double amount) => _formatter.format(amount);
 }
