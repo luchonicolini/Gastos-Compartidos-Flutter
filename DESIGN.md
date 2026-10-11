@@ -1,52 +1,22 @@
-# Dirección visual: Apple / iOS first
+# Sistema visual — Gastos Compartidos
 
-## Objetivo
+## Fuente
 
-La app debe sentirse como una aplicación nativa moderna de iPhone, aunque la
-arquitectura y la implementación sean Flutter. Se conserva la lógica de negocio
-multiplataforma, pero la jerarquía visual prioriza los patrones de iOS.
+Las cuatro imágenes de onboarding y `Mis grupos · vacío (claro)@1x.png` entregadas por el usuario son la referencia visual de este primer recorrido. Comparten fondo gris muy claro, panel de ilustración menta, tinta azul casi negra, acento petróleo, tarjetas blancas y espaciado amplio. La versión oscura conserva jerarquía y contraste con superficies oscuras y menta profunda.
 
-## Contrato visual
+## Tokens iniciales
 
-- Contenido primero: espacio en blanco, jerarquía clara y controles discretos.
-- Una sola acción principal visible por superficie.
-- Los importes y balances tienen más peso visual que sus etiquetas.
-- Cards simples, con superficies diferenciadas y profundidad sutil.
-- Menos bordes, colores y acciones simultáneas; no agregar componentes sin una
-  función de producto comprobable.
-- Sheets para tareas breves y focalizadas, especialmente crear o editar gastos.
-- No agregar tab bar hasta que existan secciones de navegación de primer nivel.
-- En iPad/tablet se puede ampliar a split view o sidebar cuando la información lo
-  justifique; no estirar una pantalla de teléfono sin límite.
+- Fondo claro: `#F4F6F8`; oscuro: `#101B22`.
+- Tinta principal clara: `#11232D`; oscura: `#F3F7F8`.
+- Texto secundario claro: `#586974`; oscuro: `#B6C5CC`.
+- Acción principal: `#0D7E88` en claro y `#49B8BE` en oscuro.
+- Panel ilustrado: `#DDF1EF` en claro y `#1B373B` en oscuro.
+- Superficie de ejemplo: blanca en claro y `#263B42` en oscuro.
+- Radios: panel 28 dp, tarjetas 20 dp, botón 16 dp.
+- Tipografía: Figtree local (SIL OFL), con pesos 400, 600, 700 y 800; Roboto es el respaldo en Android.
 
-## Tokens y componentes
+## Uso
 
-Los colores, radios, spacing y motion viven en `AppTokens`, montado como
-`ThemeExtension`. Los gestos principales usan `AppPressable`, que reemplaza el
-ripple Material por una respuesta de escala sutil y respeta Reduce Motion.
+Figtree da el tono geométrico y amable de las referencias: título de pantalla 32 dp/800 con interlineado 1,1; título de sección 28 dp/800; subtítulo 20 dp/800; cuerpo 17 dp/400 con interlineado 1,4; etiquetas desde 13 dp. Encabezado de progreso segmentado en cuatro partes, acción «Saltar» en esquina superior derecha, una demostración concreta por pantalla y botón ancho al pie. La ilustración explica el producto, no funciona como control. Los ejemplos monetarios del onboarding son ilustrativos; no representan cotizaciones actuales.
 
-Los componentes de producto previstos son `TripCard`, `ExpenseCard`,
-`BalanceCard`, `SettlementCard`, `MemberCard` y `CurrencyCard`. Se crearán solo
-cuando exista una superficie que los necesite, no como una biblioteca aislada.
-
-## Comparación antes de editar una pantalla
-
-Para cada pantalla se revisan primero:
-
-1. estado actual y contenido real;
-2. referencias oficiales de Apple HIG para navegación, sheets, layout y
-   materiales;
-3. spacing, tipografía, jerarquía, cards, estados y comportamiento responsive;
-4. elementos que deben eliminarse por ruido o duplicación;
-5. criterios de accesibilidad y validación.
-
-La referencia informa decisiones de estructura y comportamiento, no se copia la
-marca ni el layout exacto de otra aplicación.
-
-## Orden de superficies
-
-1. Inicio y lista de viajes.
-2. Detalle del viaje y balances.
-3. Sheets de grupo, miembro y gasto.
-4. Liquidaciones y estados saldados.
-5. Accesibilidad, Reduce Motion, dark mode y publicación Android.
+En el Home vacío se presenta el título «Mis grupos», una ilustración del grupo, un mensaje que explica el resultado, tres pasos cortos y una única acción «Crear mi primer grupo». El mismo vocabulario de color, tipo y superficie se reutilizará al reconstruir las vistas con contenido, sin reintroducir el diseño archivado.

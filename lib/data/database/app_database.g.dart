@@ -71,6 +71,32 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
         requiredDuringInsert: false,
         defaultValue: const Constant('ARS'),
       );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _budgetCentsMeta = const VerificationMeta(
+    'budgetCents',
+  );
+  @override
+  late final GeneratedColumn<int> budgetCents = GeneratedColumn<int>(
+    'budget_cents',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -79,6 +105,8 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
     iconName,
     colorHex,
     referenceCurrencyCode,
+    isArchived,
+    budgetCents,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -137,6 +165,21 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
         ),
       );
     }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('budget_cents')) {
+      context.handle(
+        _budgetCentsMeta,
+        budgetCents.isAcceptableOrUnknown(
+          data['budget_cents']!,
+          _budgetCentsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -170,6 +213,14 @@ class $GroupsTable extends Groups with TableInfo<$GroupsTable, Group> {
         DriftSqlType.string,
         data['${effectivePrefix}reference_currency_code'],
       )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+      budgetCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}budget_cents'],
+      ),
     );
   }
 
@@ -186,6 +237,8 @@ class Group extends DataClass implements Insertable<Group> {
   final String? iconName;
   final String? colorHex;
   final String referenceCurrencyCode;
+  final bool isArchived;
+  final int? budgetCents;
   const Group({
     required this.id,
     required this.name,
@@ -193,6 +246,8 @@ class Group extends DataClass implements Insertable<Group> {
     this.iconName,
     this.colorHex,
     required this.referenceCurrencyCode,
+    required this.isArchived,
+    this.budgetCents,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -207,6 +262,10 @@ class Group extends DataClass implements Insertable<Group> {
       map['color_hex'] = Variable<String>(colorHex);
     }
     map['reference_currency_code'] = Variable<String>(referenceCurrencyCode);
+    map['is_archived'] = Variable<bool>(isArchived);
+    if (!nullToAbsent || budgetCents != null) {
+      map['budget_cents'] = Variable<int>(budgetCents);
+    }
     return map;
   }
 
@@ -222,6 +281,10 @@ class Group extends DataClass implements Insertable<Group> {
           ? const Value.absent()
           : Value(colorHex),
       referenceCurrencyCode: Value(referenceCurrencyCode),
+      isArchived: Value(isArchived),
+      budgetCents: budgetCents == null && nullToAbsent
+          ? const Value.absent()
+          : Value(budgetCents),
     );
   }
 
@@ -239,6 +302,8 @@ class Group extends DataClass implements Insertable<Group> {
       referenceCurrencyCode: serializer.fromJson<String>(
         json['referenceCurrencyCode'],
       ),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      budgetCents: serializer.fromJson<int?>(json['budgetCents']),
     );
   }
   @override
@@ -251,6 +316,8 @@ class Group extends DataClass implements Insertable<Group> {
       'iconName': serializer.toJson<String?>(iconName),
       'colorHex': serializer.toJson<String?>(colorHex),
       'referenceCurrencyCode': serializer.toJson<String>(referenceCurrencyCode),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'budgetCents': serializer.toJson<int?>(budgetCents),
     };
   }
 
@@ -261,6 +328,8 @@ class Group extends DataClass implements Insertable<Group> {
     Value<String?> iconName = const Value.absent(),
     Value<String?> colorHex = const Value.absent(),
     String? referenceCurrencyCode,
+    bool? isArchived,
+    Value<int?> budgetCents = const Value.absent(),
   }) => Group(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -268,6 +337,8 @@ class Group extends DataClass implements Insertable<Group> {
     iconName: iconName.present ? iconName.value : this.iconName,
     colorHex: colorHex.present ? colorHex.value : this.colorHex,
     referenceCurrencyCode: referenceCurrencyCode ?? this.referenceCurrencyCode,
+    isArchived: isArchived ?? this.isArchived,
+    budgetCents: budgetCents.present ? budgetCents.value : this.budgetCents,
   );
   Group copyWithCompanion(GroupsCompanion data) {
     return Group(
@@ -281,6 +352,12 @@ class Group extends DataClass implements Insertable<Group> {
       referenceCurrencyCode: data.referenceCurrencyCode.present
           ? data.referenceCurrencyCode.value
           : this.referenceCurrencyCode,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      budgetCents: data.budgetCents.present
+          ? data.budgetCents.value
+          : this.budgetCents,
     );
   }
 
@@ -292,7 +369,9 @@ class Group extends DataClass implements Insertable<Group> {
           ..write('creationDate: $creationDate, ')
           ..write('iconName: $iconName, ')
           ..write('colorHex: $colorHex, ')
-          ..write('referenceCurrencyCode: $referenceCurrencyCode')
+          ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('budgetCents: $budgetCents')
           ..write(')'))
         .toString();
   }
@@ -305,6 +384,8 @@ class Group extends DataClass implements Insertable<Group> {
     iconName,
     colorHex,
     referenceCurrencyCode,
+    isArchived,
+    budgetCents,
   );
   @override
   bool operator ==(Object other) =>
@@ -315,7 +396,9 @@ class Group extends DataClass implements Insertable<Group> {
           other.creationDate == this.creationDate &&
           other.iconName == this.iconName &&
           other.colorHex == this.colorHex &&
-          other.referenceCurrencyCode == this.referenceCurrencyCode);
+          other.referenceCurrencyCode == this.referenceCurrencyCode &&
+          other.isArchived == this.isArchived &&
+          other.budgetCents == this.budgetCents);
 }
 
 class GroupsCompanion extends UpdateCompanion<Group> {
@@ -325,6 +408,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
   final Value<String?> iconName;
   final Value<String?> colorHex;
   final Value<String> referenceCurrencyCode;
+  final Value<bool> isArchived;
+  final Value<int?> budgetCents;
   final Value<int> rowid;
   const GroupsCompanion({
     this.id = const Value.absent(),
@@ -333,6 +418,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.referenceCurrencyCode = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.budgetCents = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   GroupsCompanion.insert({
@@ -342,6 +429,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     this.iconName = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.referenceCurrencyCode = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.budgetCents = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -353,6 +442,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     Expression<String>? iconName,
     Expression<String>? colorHex,
     Expression<String>? referenceCurrencyCode,
+    Expression<bool>? isArchived,
+    Expression<int>? budgetCents,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -363,6 +454,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
       if (colorHex != null) 'color_hex': colorHex,
       if (referenceCurrencyCode != null)
         'reference_currency_code': referenceCurrencyCode,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (budgetCents != null) 'budget_cents': budgetCents,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -374,6 +467,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
     Value<String?>? iconName,
     Value<String?>? colorHex,
     Value<String>? referenceCurrencyCode,
+    Value<bool>? isArchived,
+    Value<int?>? budgetCents,
     Value<int>? rowid,
   }) {
     return GroupsCompanion(
@@ -384,6 +479,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
       colorHex: colorHex ?? this.colorHex,
       referenceCurrencyCode:
           referenceCurrencyCode ?? this.referenceCurrencyCode,
+      isArchived: isArchived ?? this.isArchived,
+      budgetCents: budgetCents ?? this.budgetCents,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -411,6 +508,12 @@ class GroupsCompanion extends UpdateCompanion<Group> {
         referenceCurrencyCode.value,
       );
     }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (budgetCents.present) {
+      map['budget_cents'] = Variable<int>(budgetCents.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -426,6 +529,8 @@ class GroupsCompanion extends UpdateCompanion<Group> {
           ..write('iconName: $iconName, ')
           ..write('colorHex: $colorHex, ')
           ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('budgetCents: $budgetCents, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1107,6 +1212,37 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1.0),
   );
+  static const VerificationMeta _convertedAmountCentsMeta =
+      const VerificationMeta('convertedAmountCents');
+  @override
+  late final GeneratedColumn<int> convertedAmountCents = GeneratedColumn<int>(
+    'converted_amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1121,6 +1257,9 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     originalCurrencyCode,
     referenceCurrencyCode,
     exchangeRate,
+    convertedAmountCents,
+    category,
+    notes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1233,6 +1372,27 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         ),
       );
     }
+    if (data.containsKey('converted_amount_cents')) {
+      context.handle(
+        _convertedAmountCentsMeta,
+        convertedAmountCents.isAcceptableOrUnknown(
+          data['converted_amount_cents']!,
+          _convertedAmountCentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
     return context;
   }
 
@@ -1290,6 +1450,18 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.double,
         data['${effectivePrefix}exchange_rate'],
       )!,
+      convertedAmountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}converted_amount_cents'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
     );
   }
 
@@ -1312,6 +1484,9 @@ class Expense extends DataClass implements Insertable<Expense> {
   final String originalCurrencyCode;
   final String referenceCurrencyCode;
   final double exchangeRate;
+  final int convertedAmountCents;
+  final String? category;
+  final String? notes;
   const Expense({
     required this.id,
     required this.groupId,
@@ -1325,6 +1500,9 @@ class Expense extends DataClass implements Insertable<Expense> {
     required this.originalCurrencyCode,
     required this.referenceCurrencyCode,
     required this.exchangeRate,
+    required this.convertedAmountCents,
+    this.category,
+    this.notes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1345,6 +1523,13 @@ class Expense extends DataClass implements Insertable<Expense> {
     map['original_currency_code'] = Variable<String>(originalCurrencyCode);
     map['reference_currency_code'] = Variable<String>(referenceCurrencyCode);
     map['exchange_rate'] = Variable<double>(exchangeRate);
+    map['converted_amount_cents'] = Variable<int>(convertedAmountCents);
+    if (!nullToAbsent || category != null) {
+      map['category'] = Variable<String>(category);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
     return map;
   }
 
@@ -1366,6 +1551,13 @@ class Expense extends DataClass implements Insertable<Expense> {
       originalCurrencyCode: Value(originalCurrencyCode),
       referenceCurrencyCode: Value(referenceCurrencyCode),
       exchangeRate: Value(exchangeRate),
+      convertedAmountCents: Value(convertedAmountCents),
+      category: category == null && nullToAbsent
+          ? const Value.absent()
+          : Value(category),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
     );
   }
 
@@ -1393,6 +1585,11 @@ class Expense extends DataClass implements Insertable<Expense> {
         json['referenceCurrencyCode'],
       ),
       exchangeRate: serializer.fromJson<double>(json['exchangeRate']),
+      convertedAmountCents: serializer.fromJson<int>(
+        json['convertedAmountCents'],
+      ),
+      category: serializer.fromJson<String?>(json['category']),
+      notes: serializer.fromJson<String?>(json['notes']),
     );
   }
   @override
@@ -1411,6 +1608,9 @@ class Expense extends DataClass implements Insertable<Expense> {
       'originalCurrencyCode': serializer.toJson<String>(originalCurrencyCode),
       'referenceCurrencyCode': serializer.toJson<String>(referenceCurrencyCode),
       'exchangeRate': serializer.toJson<double>(exchangeRate),
+      'convertedAmountCents': serializer.toJson<int>(convertedAmountCents),
+      'category': serializer.toJson<String?>(category),
+      'notes': serializer.toJson<String?>(notes),
     };
   }
 
@@ -1427,6 +1627,9 @@ class Expense extends DataClass implements Insertable<Expense> {
     String? originalCurrencyCode,
     String? referenceCurrencyCode,
     double? exchangeRate,
+    int? convertedAmountCents,
+    Value<String?> category = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
   }) => Expense(
     id: id ?? this.id,
     groupId: groupId ?? this.groupId,
@@ -1442,6 +1645,9 @@ class Expense extends DataClass implements Insertable<Expense> {
     originalCurrencyCode: originalCurrencyCode ?? this.originalCurrencyCode,
     referenceCurrencyCode: referenceCurrencyCode ?? this.referenceCurrencyCode,
     exchangeRate: exchangeRate ?? this.exchangeRate,
+    convertedAmountCents: convertedAmountCents ?? this.convertedAmountCents,
+    category: category.present ? category.value : this.category,
+    notes: notes.present ? notes.value : this.notes,
   );
   Expense copyWithCompanion(ExpensesCompanion data) {
     return Expense(
@@ -1469,6 +1675,11 @@ class Expense extends DataClass implements Insertable<Expense> {
       exchangeRate: data.exchangeRate.present
           ? data.exchangeRate.value
           : this.exchangeRate,
+      convertedAmountCents: data.convertedAmountCents.present
+          ? data.convertedAmountCents.value
+          : this.convertedAmountCents,
+      category: data.category.present ? data.category.value : this.category,
+      notes: data.notes.present ? data.notes.value : this.notes,
     );
   }
 
@@ -1486,7 +1697,10 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('originalAmountCents: $originalAmountCents, ')
           ..write('originalCurrencyCode: $originalCurrencyCode, ')
           ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
-          ..write('exchangeRate: $exchangeRate')
+          ..write('exchangeRate: $exchangeRate, ')
+          ..write('convertedAmountCents: $convertedAmountCents, ')
+          ..write('category: $category, ')
+          ..write('notes: $notes')
           ..write(')'))
         .toString();
   }
@@ -1505,6 +1719,9 @@ class Expense extends DataClass implements Insertable<Expense> {
     originalCurrencyCode,
     referenceCurrencyCode,
     exchangeRate,
+    convertedAmountCents,
+    category,
+    notes,
   );
   @override
   bool operator ==(Object other) =>
@@ -1521,7 +1738,10 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.originalAmountCents == this.originalAmountCents &&
           other.originalCurrencyCode == this.originalCurrencyCode &&
           other.referenceCurrencyCode == this.referenceCurrencyCode &&
-          other.exchangeRate == this.exchangeRate);
+          other.exchangeRate == this.exchangeRate &&
+          other.convertedAmountCents == this.convertedAmountCents &&
+          other.category == this.category &&
+          other.notes == this.notes);
 }
 
 class ExpensesCompanion extends UpdateCompanion<Expense> {
@@ -1537,6 +1757,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<String> originalCurrencyCode;
   final Value<String> referenceCurrencyCode;
   final Value<double> exchangeRate;
+  final Value<int> convertedAmountCents;
+  final Value<String?> category;
+  final Value<String?> notes;
   final Value<int> rowid;
   const ExpensesCompanion({
     this.id = const Value.absent(),
@@ -1551,6 +1774,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.originalCurrencyCode = const Value.absent(),
     this.referenceCurrencyCode = const Value.absent(),
     this.exchangeRate = const Value.absent(),
+    this.convertedAmountCents = const Value.absent(),
+    this.category = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExpensesCompanion.insert({
@@ -1566,6 +1792,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.originalCurrencyCode = const Value.absent(),
     this.referenceCurrencyCode = const Value.absent(),
     this.exchangeRate = const Value.absent(),
+    this.convertedAmountCents = const Value.absent(),
+    this.category = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        groupId = Value(groupId),
@@ -1586,6 +1815,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<String>? originalCurrencyCode,
     Expression<String>? referenceCurrencyCode,
     Expression<double>? exchangeRate,
+    Expression<int>? convertedAmountCents,
+    Expression<String>? category,
+    Expression<String>? notes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1604,6 +1836,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (referenceCurrencyCode != null)
         'reference_currency_code': referenceCurrencyCode,
       if (exchangeRate != null) 'exchange_rate': exchangeRate,
+      if (convertedAmountCents != null)
+        'converted_amount_cents': convertedAmountCents,
+      if (category != null) 'category': category,
+      if (notes != null) 'notes': notes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1621,6 +1857,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<String>? originalCurrencyCode,
     Value<String>? referenceCurrencyCode,
     Value<double>? exchangeRate,
+    Value<int>? convertedAmountCents,
+    Value<String?>? category,
+    Value<String?>? notes,
     Value<int>? rowid,
   }) {
     return ExpensesCompanion(
@@ -1637,6 +1876,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       referenceCurrencyCode:
           referenceCurrencyCode ?? this.referenceCurrencyCode,
       exchangeRate: exchangeRate ?? this.exchangeRate,
+      convertedAmountCents: convertedAmountCents ?? this.convertedAmountCents,
+      category: category ?? this.category,
+      notes: notes ?? this.notes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1684,6 +1926,15 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     if (exchangeRate.present) {
       map['exchange_rate'] = Variable<double>(exchangeRate.value);
     }
+    if (convertedAmountCents.present) {
+      map['converted_amount_cents'] = Variable<int>(convertedAmountCents.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1705,6 +1956,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('originalCurrencyCode: $originalCurrencyCode, ')
           ..write('referenceCurrencyCode: $referenceCurrencyCode, ')
           ..write('exchangeRate: $exchangeRate, ')
+          ..write('convertedAmountCents: $convertedAmountCents, ')
+          ..write('category: $category, ')
+          ..write('notes: $notes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3150,6 +3404,8 @@ typedef $$GroupsTableCreateCompanionBuilder =
       Value<String?> iconName,
       Value<String?> colorHex,
       Value<String> referenceCurrencyCode,
+      Value<bool> isArchived,
+      Value<int?> budgetCents,
       Value<int> rowid,
     });
 typedef $$GroupsTableUpdateCompanionBuilder =
@@ -3160,6 +3416,8 @@ typedef $$GroupsTableUpdateCompanionBuilder =
       Value<String?> iconName,
       Value<String?> colorHex,
       Value<String> referenceCurrencyCode,
+      Value<bool> isArchived,
+      Value<int?> budgetCents,
       Value<int> rowid,
     });
 
@@ -3259,6 +3517,16 @@ class $$GroupsTableFilterComposer
 
   ColumnFilters<String> get referenceCurrencyCode => $composableBuilder(
     column: $table.referenceCurrencyCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get budgetCents => $composableBuilder(
+    column: $table.budgetCents,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3376,6 +3644,16 @@ class $$GroupsTableOrderingComposer
     column: $table.referenceCurrencyCode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get budgetCents => $composableBuilder(
+    column: $table.budgetCents,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GroupsTableAnnotationComposer
@@ -3406,6 +3684,16 @@ class $$GroupsTableAnnotationComposer
 
   GeneratedColumn<String> get referenceCurrencyCode => $composableBuilder(
     column: $table.referenceCurrencyCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get budgetCents => $composableBuilder(
+    column: $table.budgetCents,
     builder: (column) => column,
   );
 
@@ -3523,6 +3811,8 @@ class $$GroupsTableTableManager
                 Value<String?> iconName = const Value.absent(),
                 Value<String?> colorHex = const Value.absent(),
                 Value<String> referenceCurrencyCode = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int?> budgetCents = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GroupsCompanion(
                 id: id,
@@ -3531,6 +3821,8 @@ class $$GroupsTableTableManager
                 iconName: iconName,
                 colorHex: colorHex,
                 referenceCurrencyCode: referenceCurrencyCode,
+                isArchived: isArchived,
+                budgetCents: budgetCents,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3541,6 +3833,8 @@ class $$GroupsTableTableManager
                 Value<String?> iconName = const Value.absent(),
                 Value<String?> colorHex = const Value.absent(),
                 Value<String> referenceCurrencyCode = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int?> budgetCents = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => GroupsCompanion.insert(
                 id: id,
@@ -3549,6 +3843,8 @@ class $$GroupsTableTableManager
                 iconName: iconName,
                 colorHex: colorHex,
                 referenceCurrencyCode: referenceCurrencyCode,
+                isArchived: isArchived,
+                budgetCents: budgetCents,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4603,6 +4899,9 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       Value<String> originalCurrencyCode,
       Value<String> referenceCurrencyCode,
       Value<double> exchangeRate,
+      Value<int> convertedAmountCents,
+      Value<String?> category,
+      Value<String?> notes,
       Value<int> rowid,
     });
 typedef $$ExpensesTableUpdateCompanionBuilder =
@@ -4619,6 +4918,9 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<String> originalCurrencyCode,
       Value<String> referenceCurrencyCode,
       Value<double> exchangeRate,
+      Value<int> convertedAmountCents,
+      Value<String?> category,
+      Value<String?> notes,
       Value<int> rowid,
     });
 
@@ -4765,6 +5067,21 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<double> get exchangeRate => $composableBuilder(
     column: $table.exchangeRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get convertedAmountCents => $composableBuilder(
+    column: $table.convertedAmountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4931,6 +5248,21 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get convertedAmountCents => $composableBuilder(
+    column: $table.convertedAmountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$GroupsTableOrderingComposer get groupId {
     final $$GroupsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5008,6 +5340,17 @@ class $$ExpensesTableAnnotationComposer
     column: $table.exchangeRate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get convertedAmountCents => $composableBuilder(
+    column: $table.convertedAmountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
 
   $$GroupsTableAnnotationComposer get groupId {
     final $$GroupsTableAnnotationComposer composer = $composerBuilder(
@@ -5154,6 +5497,9 @@ class $$ExpensesTableTableManager
                 Value<String> originalCurrencyCode = const Value.absent(),
                 Value<String> referenceCurrencyCode = const Value.absent(),
                 Value<double> exchangeRate = const Value.absent(),
+                Value<int> convertedAmountCents = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion(
                 id: id,
@@ -5168,6 +5514,9 @@ class $$ExpensesTableTableManager
                 originalCurrencyCode: originalCurrencyCode,
                 referenceCurrencyCode: referenceCurrencyCode,
                 exchangeRate: exchangeRate,
+                convertedAmountCents: convertedAmountCents,
+                category: category,
+                notes: notes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5184,6 +5533,9 @@ class $$ExpensesTableTableManager
                 Value<String> originalCurrencyCode = const Value.absent(),
                 Value<String> referenceCurrencyCode = const Value.absent(),
                 Value<double> exchangeRate = const Value.absent(),
+                Value<int> convertedAmountCents = const Value.absent(),
+                Value<String?> category = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion.insert(
                 id: id,
@@ -5198,6 +5550,9 @@ class $$ExpensesTableTableManager
                 originalCurrencyCode: originalCurrencyCode,
                 referenceCurrencyCode: referenceCurrencyCode,
                 exchangeRate: exchangeRate,
+                convertedAmountCents: convertedAmountCents,
+                category: category,
+                notes: notes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

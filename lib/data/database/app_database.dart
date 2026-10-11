@@ -12,6 +12,8 @@ class Groups extends Table {
   TextColumn get iconName => text().nullable()();
   TextColumn get colorHex => text().nullable()();
   TextColumn get referenceCurrencyCode => text().withDefault(const Constant('ARS'))();
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
+  IntColumn get budgetCents => integer().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -48,6 +50,9 @@ class Expenses extends Table {
   TextColumn get originalCurrencyCode => text().withDefault(const Constant('ARS'))();
   TextColumn get referenceCurrencyCode => text().withDefault(const Constant('ARS'))();
   RealColumn get exchangeRate => real().withDefault(const Constant(1.0))();
+  IntColumn get convertedAmountCents => integer().withDefault(const Constant(0))();
+  TextColumn get category => text().nullable()();
+  TextColumn get notes => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
@@ -102,7 +107,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.inMemory() : super(openMemoryDatabase());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +130,13 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await migrator.createTable(settlements);
+          }
+          if (from < 6) {
+            await migrator.addColumn(groups, groups.isArchived);
+            await migrator.addColumn(groups, groups.budgetCents);
+            await migrator.addColumn(expenses, expenses.convertedAmountCents);
+            await migrator.addColumn(expenses, expenses.category);
+            await migrator.addColumn(expenses, expenses.notes);
           }
         },
       );

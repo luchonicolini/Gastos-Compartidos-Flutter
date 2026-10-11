@@ -1,807 +1,408 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/repositories/local_group_repository.dart';
-import '../../../domain/models/group.dart';
 import '../../../domain/models/expense.dart';
-import '../../../domain/models/currency.dart';
-import '../../../domain/models/money.dart';
-import '../../../domain/models/member_balance.dart';
-import '../../../domain/models/person.dart';
-import '../../../domain/models/settlement_payment.dart';
-import '../../../logic/balance_calculator.dart';
-import '../../../logic/settlement_calculator.dart';
-import '../../../core/theme/app_tokens.dart';
-import '../../expenses/presentation/expense_form_sheet.dart';
+import '../../../domain/models/group.dart';
+import '../../../shared/group_bottom_nav.dart';
+import '../../../shared/group_visuals.dart';
+import '../../balances/presentation/group_balances_view.dart';
+import '../../expenses/presentation/all_expenses_screen.dart';
+import '../../expenses/presentation/create_expense_screen.dart';
+import '../../members/presentation/group_members_view.dart';
+import '../application/group_operations.dart';
+import 'edit_group_screen.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   const GroupDetailScreen({
     super.key,
     required this.group,
     required this.repository,
+    this.initialTab = 0,
   });
 
   final Group group;
   final LocalGroupRepository repository;
+  final int initialTab;
 
   @override
   State<GroupDetailScreen> createState() => _GroupDetailScreenState();
 }
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
-  late Group _group;
+  late Group _group = widget.group;
+  late int _selectedTab = widget.initialTab;
 
   @override
   void initState() {
     super.initState();
-    _group = widget.group;
+    _refreshGroup();
   }
 
-  Future<void> _saveGroup(Group group) async {
-    await widget.repository.save(group);
-    if (!mounted) return;
-    setState(() => _group = group);
+  Future<void> _refreshGroup() async {
+    final updated = await widget.repository.getById(_group.id);
+    if (updated != null && mounted) {
+      setState(() => _group = updated);
+    }
   }
 
-  Future<void> _addMember() async {
-    final name = await showModalBottomSheet<String>(
+  Future<void> _openAddExpense([Expense? expenseToEdit]) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CreateExpenseScreen(
+          repository: widget.repository,
+          group: _group,
+          initialExpense: expenseToEdit,
+        ),
+      ),
+    );
+    if (result == true && mounted) {
+      await _refreshGroup();
+    }
+  }
+
+  Future<void> _openEditGroup() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EditGroupScreen(
+          group: _group,
+          repository: widget.repository,
+        ),
+      ),
+    );
+    if (result == true && mounted) {
+      final updated = await widget.repository.getById(_group.id);
+      if (!mounted) return;
+      if (updated == null) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() => _group = updated);
+      }
+    }
+  }
+
+  Future<void> _openManageMembers() async {
+    setState(() => _selectedTab = 1);
+  }
+
+  Future<void> _openAddPerson() async {
+    final name = await showDialog<String>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => const _MemberFormSheet(),
+      builder: (context) => AddPersonDialog(
+        existingNames:
+            _group.members.map((m) => m.name.toLowerCase()).toSet(),
+      ),
     );
-    if (name == null) return;
-
-    final alreadyExists = _group.members.any(
-      (member) => member.name.toLowerCase() == name.toLowerCase(),
-    );
-    if (alreadyExists) {
-      if (mounted) {
+    if (name != null && name.isNotEmpty && mounted) {
+      try {
+        final updated = await GroupOperations(widget.repository)
+            .addMember(_group, name);
+        setState(() => _group = updated);
+      } on ArgumentError catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ya existe un miembro con ese nombre.')),
+          SnackBar(
+            content: Text(e.message?.toString() ?? 'Error al agregar persona.'),
+          ),
         );
       }
-      return;
     }
-
-    await _saveGroup(
-      _group.copyWith(
-        members: [
-          ..._group.members,
-          Person(name: name),
-        ],
-      ),
-    );
   }
 
-  Future<void> _toggleArchive(Person member) async {
-    final action = member.isArchived ? 'reactivar' : 'archivar';
+  Future<void> _deleteGroup() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${member.isArchived ? 'Reactivar' : 'Archivar'} miembro'),
-        content: Text('¿Querés $action a ${member.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(member.isArchived ? 'Reactivar' : 'Archivar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final members = _group.members
-        .map(
-          (item) => item.id == member.id
-              ? item.copyWith(isArchived: !item.isArchived)
-              : item,
-        )
-        .toList();
-    await _saveGroup(_group.copyWith(members: members));
-  }
-
-  Future<void> _addExpense() async {
-    final expense = await showModalBottomSheet<Expense>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => ExpenseFormSheet(group: _group),
-    );
-    if (expense == null) return;
-    await _saveGroup(_group.copyWith(expenses: [..._group.expenses, expense]));
-  }
-
-  Future<void> _editExpense(Expense expense) async {
-    final updated = await showModalBottomSheet<Expense>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => ExpenseFormSheet(group: _group, initialExpense: expense),
-    );
-    if (updated == null) return;
-    final expenses = _group.expenses
-        .map((item) => item.id == updated.id ? updated : item)
-        .toList();
-    await _saveGroup(_group.copyWith(expenses: expenses));
-  }
-
-  Future<void> _deleteExpense(Expense expense) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar gasto'),
-        content: Text('¿Querés eliminar “${expense.description}”?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    await _saveGroup(
-      _group.copyWith(
-        expenses: _group.expenses
-            .where((item) => item.id != expense.id)
-            .toList(),
-      ),
-    );
-  }
-
-  Future<void> _confirmSettlement(FormattedSettlement settlement) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar pago'),
+        title: const Text('Eliminar grupo'),
         content: Text(
-          '${settlement.payerName} le pagó a ${settlement.payeeName} ${settlement.formattedAmount}. ¿Querés registrarlo?',
+          '¿Querés eliminar el grupo "${_group.name}"? Esta acción no se puede deshacer.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    final payment = SettlementPayment(
-      payerId: settlement.payerId,
-      payeeId: settlement.payeeId,
-      money: Money.fromDecimal(settlement.amount, _group.referenceCurrency),
-      groupId: _group.id,
-      payerName: settlement.payerName,
-      payeeName: settlement.payeeName,
-    );
-    await _saveGroup(
-      _group.copyWith(
-        settlementPayments: [..._group.settlementPayments, payment],
-      ),
-    );
-  }
-
-  Future<void> _deleteSettlement(SettlementPayment payment) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar pago registrado'),
-        content: Text(
-          '¿Querés quitar el pago de ${payment.payerName} a ${payment.payeeName}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Eliminar'),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
-    await _saveGroup(
-      _group.copyWith(
-        settlementPayments: _group.settlementPayments
-            .where((item) => item.id != payment.id)
-            .toList(),
-      ),
-    );
+    if (confirmed == true && mounted) {
+      await GroupOperations(widget.repository).deleteGroup(_group);
+      if (mounted) Navigator.of(context).pop(true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeMembers = _group.members
-        .where((member) => !member.isArchived)
-        .toList();
-    final archivedMembers = _group.members
-        .where((member) => member.isArchived)
-        .toList();
-    final balances = BalanceCalculator.calculateMemberBalances(_group);
-    final pendingSettlements = SettlementCalculator.suggestFormattedSettlements(
-      balances,
-      referenceCurrency: _group.referenceCurrency,
-    );
-    final isSettled =
-        balances.isNotEmpty && balances.every((balance) => balance.isNeutral);
+    final theme = Theme.of(context);
+    final groupColor = groupColorFromHex(_group.colorHex);
+    final groupIcon = groupIconFromName(_group.iconName);
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_group.name),
-        actions: [
-          IconButton(
-            onPressed: _addExpense,
-            icon: const Icon(Icons.add_card_outlined),
-            tooltip: 'Agregar gasto',
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              children: [
+                // Top Navigation Bar
+                _buildTopBar(context, groupColor, groupIcon),
+
+                // Main Content with Floating Action Button
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: _buildBody(context),
+                      ),
+                      if (_selectedTab == 0 && !isKeyboardOpen)
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: _buildExtendedFab(context),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Fixed Action Button (e.g. for Personas tab)
+                if (_selectedTab == 1) _buildActionButton(context),
+
+                // Bottom Tab Bar: Gastos, Personas, Cuentas
+                GroupDetailBottomNav(
+                  selectedIndex: _selectedTab,
+                  onChanged: (index) {
+                    setState(() => _selectedTab = index);
+                  },
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, Color groupColor, IconData groupIcon) {
+    final theme = Theme.of(context);
+    final isPersonas = _selectedTab == 1;
+    final isCuentas = _selectedTab == 2;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.arrow_back_rounded),
+            tooltip: 'Volver',
+          ),
+          const SizedBox(width: 4),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: groupColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              groupIcon,
+              color: Colors.white,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: (isPersonas || isCuentas)
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _group.name,
+                        style: const TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF586974),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        isPersonas ? 'Personas' : 'Cuentas',
+                        style: const TextStyle(
+                          fontFamily: 'Figtree',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: Color(0xFF11232D),
+                          height: 1.15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  )
+                : Text(
+                    _group.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+          ),
+          if (!isPersonas && !isCuentas)
+            PopupMenuButton<String>(
+              key: const Key('group-detail-menu-button'),
+              icon: const Icon(Icons.more_vert_rounded),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              onSelected: (value) {
+                if (value == 'edit') _openEditGroup();
+                if (value == 'members') _openManageMembers();
+                if (value == 'delete') _deleteGroup();
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  key: Key('group-detail-menu-edit'),
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Expanded(child: Text('Editar grupo')),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'members',
+                  child: Row(
+                    children: [
+                      Icon(Icons.group_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Expanded(child: Text('Integrantes')),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline,
+                          size: 20, color: Colors.red),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Eliminar grupo',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontalPadding = constraints.maxWidth >= 720 ? 32.0 : 16.0;
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  12,
-                  horizontalPadding,
-                  100,
-                ),
-                children: [
-                  _SummaryCard(group: _group),
-                  const SizedBox(height: 24),
-                  Text(
-                    '¿Cómo vamos?',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_group.members.isEmpty)
-                    const _InfoTile(
-                      icon: Icons.insights_outlined,
-                      text: 'Agregá miembros para ver balances.',
-                    )
-                  else if (_group.expenses.isEmpty)
-                    const _InfoTile(
-                      icon: Icons.insights_outlined,
-                      text: 'Agregá un gasto para calcular balances.',
-                    )
-                  else ...[
-                    if (isSettled)
-                      const _SettledCard()
-                    else
-                      ...balances.map(
-                        (balance) => _BalanceTile(
-                          balance: balance,
-                          currency: _group.referenceCurrency,
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Pagos sugeridos',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (pendingSettlements.isEmpty)
-                      const _InfoTile(
-                        icon: Icons.check_circle_outline,
-                        text: 'No hay pagos pendientes.',
-                      )
-                    else
-                      ...pendingSettlements.map(
-                        (settlement) => _SuggestedSettlementTile(
-                          settlement: settlement,
-                          onConfirm: () => _confirmSettlement(settlement),
-                        ),
-                      ),
-                  ],
-                  if (_group.settlementPayments.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Pagos registrados',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ..._group.settlementPayments.map(
-                      (payment) => _SettlementHistoryTile(
-                        payment: payment,
-                        onDelete: () => _deleteSettlement(payment),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Miembros',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${activeMembers.length} activos',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (activeMembers.isEmpty)
-                    const _InfoTile(
-                      icon: Icons.person_off_outlined,
-                      text: 'No hay miembros activos.',
-                    )
-                  else
-                    ...activeMembers.map(
-                      (member) => _MemberTile(
-                        member: member,
-                        onToggle: () => _toggleArchive(member),
-                      ),
-                    ),
-                  if (archivedMembers.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Text(
-                      'Archivados',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...archivedMembers.map(
-                      (member) => _MemberTile(
-                        member: member,
-                        onToggle: () => _toggleArchive(member),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Gastos',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${_group.expenses.length}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_group.expenses.isEmpty)
-                    const _InfoTile(
-                      icon: Icons.receipt_long_outlined,
-                      text: 'Todavía no hay gastos.',
-                    )
-                  else
-                    ..._group.expenses.map(
-                      (expense) => _ExpenseTile(
-                        expense: expense,
-                        onEdit: () => _editExpense(expense),
-                        onDelete: () => _deleteExpense(expense),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addMember,
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Agregar miembro'),
-      ),
     );
   }
-}
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.group});
-
-  final Group group;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final tokens = context.tokens;
-    final total = group.expenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.amount,
-    );
-    return Card(
-      color: tokens.surfaceSecondary,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: colors.primaryContainer,
-                  child: Icon(
-                    Icons.groups_outlined,
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    group.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Total registrado',
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(color: tokens.labelSecondary),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${group.referenceCurrency.symbol}${total.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${group.expenses.length} ${group.expenses.length == 1 ? 'gasto' : 'gastos'} · ${group.referenceCurrency.code}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: tokens.labelSecondary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MemberTile extends StatelessWidget {
-  const _MemberTile({required this.member, required this.onToggle});
-
-  final Person member;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(member.name.characters.first.toUpperCase()),
-        ),
-        title: Text(member.name),
-        subtitle: member.isArchived
-            ? const Text('Conserva su historial')
-            : null,
-        trailing: TextButton(
-          onPressed: onToggle,
-          child: Text(member.isArchived ? 'Reactivar' : 'Archivar'),
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(text),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      ),
-    );
-  }
-}
-
-class _BalanceTile extends StatelessWidget {
-  const _BalanceTile({required this.balance, required this.currency});
-
-  final MemberBalance balance;
-  final Currency currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final color = balance.isCreditor
-        ? colors.tertiary
-        : balance.isDebtor
-        ? colors.error
-        : colors.onSurfaceVariant;
-    final sign = balance.balance > 0 ? '+' : '';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(balance.name.characters.first.toUpperCase()),
-        ),
-        title: Text(balance.name),
-        trailing: Text(
-          '$sign${currency.symbol}${balance.balance.abs().toStringAsFixed(2)}',
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}
-
-class _SuggestedSettlementTile extends StatelessWidget {
-  const _SuggestedSettlementTile({
-    required this.settlement,
-    required this.onConfirm,
-  });
-
-  final FormattedSettlement settlement;
-  final VoidCallback onConfirm;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(Icons.arrow_forward_rounded, color: colors.tertiary),
-        title: Text('${settlement.payerName} → ${settlement.payeeName}'),
-        subtitle: Text(settlement.formattedAmount),
-        trailing: TextButton(
-          onPressed: onConfirm,
-          child: const Text('Confirmar'),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettlementHistoryTile extends StatelessWidget {
-  const _SettlementHistoryTile({required this.payment, required this.onDelete});
-
-  final SettlementPayment payment;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(Icons.check_circle, color: colors.tertiary),
-        title: Text('${payment.payerName} → ${payment.payeeName}'),
-        subtitle: const Text('Pago registrado'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${payment.currency.symbol}${payment.amount.toStringAsFixed(2)}',
-            ),
-            IconButton(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Eliminar pago',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SettledCard extends StatelessWidget {
-  const _SettledCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      color: colors.tertiaryContainer,
-      child: ListTile(
-        leading: Icon(
-          Icons.celebration_outlined,
-          color: colors.onTertiaryContainer,
-        ),
-        title: const Text(
-          'Viaje saldado',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: const Text('Nadie le debe dinero a nadie.'),
-      ),
-    );
-  }
-}
-
-class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({
-    required this.expense,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final Expense expense;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.receipt_long_outlined)),
-        title: Text(expense.description),
-        subtitle: Text(
-          'Pagó ${expense.payer?.name ?? (expense.payers.length > 1 ? 'varias personas' : 'Sin definir')} • '
-          '${expense.originalCurrency.symbol}${expense.originalAmount.decimalValue.toStringAsFixed(2)} ${expense.originalCurrency.code} • '
-          '${expense.splitType.localizedDescription}',
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '\$${expense.amount.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') onEdit();
-                if (value == 'delete') onDelete();
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Editar')),
-                PopupMenuItem(value: 'delete', child: Text('Eliminar')),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MemberFormSheet extends StatefulWidget {
-  const _MemberFormSheet();
-
-  @override
-  State<_MemberFormSheet> createState() => _MemberFormSheetState();
-}
-
-class _MemberFormSheetState extends State<_MemberFormSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) {
-      _focusNode.requestFocus();
-      return;
+  Widget _buildBody(BuildContext context) {
+    if (_selectedTab == 1) {
+      return GroupMembersView(
+        group: _group,
+        repository: widget.repository,
+        onGroupChanged: (updated) => setState(() => _group = updated),
+      );
     }
-    final name = _controller.text.trim();
-    Navigator.pop(context, name);
+
+    if (_selectedTab == 2) {
+      return GroupBalancesView(
+        group: _group,
+        repository: widget.repository,
+        onGroupChanged: (updated) => setState(() => _group = updated),
+        onNavigateToExpenses: () => setState(() => _selectedTab = 0),
+      );
+    }
+
+    return GroupExpensesView(
+      group: _group,
+      repository: widget.repository,
+      onGroupChanged: (updated) => setState(() => _group = updated),
+      onAddExpense: () => _openAddExpense(),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.viewInsetsOf(context).bottom + 20,
-        ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.tokens.separator,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+  Widget _buildActionButton(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    if (_selectedTab == 1) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: FilledButton.icon(
+            key: const Key('add-person-button'),
+            onPressed: _openAddPerson,
+            icon: const Icon(Icons.add_rounded, size: 22),
+            label: const Text(
+              'Agregar persona',
+              style: TextStyle(
+                fontFamily: 'Figtree',
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Agregar miembro',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  IconButton(
-                    key: const ValueKey<String>('close-member-form'),
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                    tooltip: 'Cancelar',
-                  ),
-                ],
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                key: const ValueKey<String>('member-name-field'),
-                controller: _controller,
-                focusNode: _focusNode,
-                autofocus: true,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Ingresá un nombre'
-                    : null,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  hintText: 'Ej. Ana',
-                  helperText: ' ',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                key: const ValueKey<String>('save-member-form'),
-                onPressed: _submit,
-                child: const Text('Agregar'),
-              ),
-            ],
+            ),
           ),
         ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildExtendedFab(BuildContext context) {
+    return FloatingActionButton.extended(
+      key: const Key('load-expense-button'),
+      onPressed: () => _openAddExpense(),
+      backgroundColor: const Color(0xFF0D7E88),
+      foregroundColor: Colors.white,
+      elevation: 4,
+      highlightElevation: 6,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      icon: const Icon(
+        Icons.add_rounded,
+        size: 22,
+        color: Colors.white,
+      ),
+      label: const Text(
+        'Cargar gasto',
+        style: TextStyle(
+          fontFamily: 'Figtree',
+          fontWeight: FontWeight.w700,
+          fontSize: 16,
+          color: Colors.white,
+          letterSpacing: -0.2,
+        ),
       ),
     );
   }
 }
+

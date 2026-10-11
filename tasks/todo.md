@@ -1,5 +1,10 @@
 # Tareas: Gastos Compartidos Flutter
 
+> Estado al 10/10/2026: la interfaz anterior fue retirada para reconstruirla
+> pantalla por pantalla. Su código está respaldado en `legacy-ui-2026-10-10.zip`.
+> Las tareas de interfaz marcadas como pendientes abajo ya no están disponibles
+> en la aplicación actual. Los modelos, cálculos y datos locales se conservaron.
+
 ## Fase 1 — Fundaciones
 
 - [x] Definir contrato de persistencia local y comparar opciones compatibles con Flutter.
@@ -22,30 +27,33 @@
 
 ## Fase 2 — Grupos y miembros
 
-- [x] Implementar lista persistente de grupos.
-- [x] Implementar crear y editar grupo.
-- [x] Implementar eliminar grupo con confirmación.
-- [x] Implementar detalle de grupo.
-- [ ] Implementar agregar y editar miembros.
-- [x] Implementar archivar y reactivar miembros.
+- [x] Reconstruir el estado vacío de grupos.
+- [x] Reconstruir la lista persistente de grupos con contenido.
+- [x] Reconstruir crear grupo con nombre, icono y color.
+- [ ] Reconstruir editar grupo.
+- [ ] Reconstruir eliminar grupo con confirmación.
+- [x] Reconstruir el detalle de grupo.
+- [x] Reconstruir el alta inicial de integrantes.
+- [x] Implementar editar miembros.
+- [x] Reconstruir la interfaz para archivar y reactivar miembros.
 
 ## Fase 3 — Gastos
 
-- [x] Implementar formulario base de gasto.
-- [x] Implementar pagador y participantes.
-- [x] Implementar división equitativa.
-- [x] Implementar división por monto.
-- [x] Implementar división por porcentaje.
-- [x] Implementar división por partes.
-- [x] Implementar edición y eliminación de gastos.
+- [x] Reconstruir el formulario base de gasto.
+- [x] Reconstruir la selección de pagadores y participantes.
+- [x] Reconstruir la interfaz de división equitativa.
+- [x] Reconstruir la interfaz de división por monto.
+- [x] Reconstruir la interfaz de división por porcentaje.
+- [x] Reconstruir la interfaz de división por partes.
+- [x] Reconstruir la edición y eliminación de gastos.
 
 ## Fase 4 — Balances y liquidaciones
 
-- [x] Implementar resumen de balances.
-- [x] Implementar sugerencias de pagos.
-- [x] Implementar confirmación de liquidación.
-- [x] Implementar eliminación de liquidación.
-- [x] Implementar estado de cuentas saldadas.
+- [x] Reconstruir el resumen de balances.
+- [x] Reconstruir la presentación de sugerencias de pagos.
+- [x] Reconstruir la confirmación de liquidación.
+- [x] Reconstruir la eliminación de liquidación.
+- [x] Reconstruir el estado de cuentas saldadas.
 - [x] Verificar generación Drift y registro persistente de `Settlements`.
 - [x] Unificar `SettlementPayment` y Repository con importes exactos en centavos.
 - [x] Usar siempre `referenceCurrency` del grupo en balances y liquidaciones.
@@ -54,11 +62,13 @@
 
 ## Fase 5 — Diseño y publicación
 
-- [x] Aplicar sistema visual Apple-inspired inicial con tokens propios.
-- [x] Definir contrato visual iOS-first y tokens propios de aplicación.
-- [x] Revisar navegación, sheets y safe areas del flujo existente.
-- [x] Mejorar contraste y soporte de modo oscuro en las pantallas principales.
-- [x] Adaptar lista de grupos y detalle para teléfonos, tablets y ventanas amplias.
+- [x] Reconstruir el onboarding de cuatro pasos con referencias visuales del usuario.
+- [x] Mostrar el onboarding solo la primera vez y recordar «Saltar» o «Comenzar».
+- [ ] Definir el nuevo sistema visual coherente para todas las pantallas.
+- [ ] Definir tokens de aplicación compartidos.
+- [ ] Reconstruir navegación, sheets y safe areas.
+- [ ] Implementar contraste y modo oscuro en las nuevas pantallas.
+- [ ] Adaptar las nuevas pantallas a teléfonos y tablets.
 - [ ] Revisar accesibilidad completa y Reduce Motion.
 - [ ] Configurar identidad Android y firma de release.
 - [ ] Generar build de prueba para Google Play Store.

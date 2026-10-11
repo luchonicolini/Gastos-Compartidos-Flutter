@@ -8,8 +8,10 @@ class Currency {
   static const ars = Currency(code: 'ARS', symbol: r'$', name: 'Peso argentino');
   static const brl = Currency(code: 'BRL', symbol: r'R$', name: 'Real brasileño');
   static const usd = Currency(code: 'USD', symbol: r'US$', name: 'Dólar estadounidense');
+  static const eur = Currency(code: 'EUR', symbol: '€', name: 'Euro');
+  static const uyu = Currency(code: 'UYU', symbol: r'$U', name: 'Peso uruguayo');
 
-  static const supported = [ars, brl, usd];
+  static const supported = [ars, brl, usd, eur, uyu];
 
   static Currency fromCode(String code) {
     return supported.firstWhere(

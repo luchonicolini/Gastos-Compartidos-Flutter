@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shared loop: the visual signature of people, journeys and shared money. -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,21 C72,21 82,34 82,54 C82,74 72,87 54,87 C36,87 26,74 26,54 C26,42 31,32 41,27"
+        android:strokeColor="#EAF8F6"
+        android:strokeLineCap="round"
+        android:strokeWidth="7.5" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M41,27 C45,24 49,21 54,21"
+        android:strokeColor="#14A6A8"
+        android:strokeLineCap="round"
+        android:strokeWidth="7.5" />
+
+    <!-- Three individual contributions. -->
+    <path android:fillColor="#F06D4F" android:pathData="M75,38 A7,7 0,1 0,75.01,38" />
+    <path android:fillColor="#6D57CF" android:pathData="M65,80 A7,7 0,1 0,65.01,80" />
+    <path android:fillColor="#14A6A8" android:pathData="M30,57 A7,7 0,1 0,30.01,57" />
+
+    <!-- A ledger-like central split, deliberately not a generic currency symbol. -->
+    <path android:fillColor="#F7FBFA" android:pathData="M54,42 A12,12 0,1 0,54.01,42" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,47 L54,61 M47,54 L61,54"
+        android:strokeColor="#11232D"
+        android:strokeLineCap="round"
+        android:strokeWidth="4.2" />
+    <path android:fillColor="#14A6A8" android:pathData="M54,51.8 A2.2,2.2 0,1 0,54.01,51.8" />
+</vector>

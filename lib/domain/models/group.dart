@@ -14,6 +14,8 @@ class Group {
   final List<Person> members;
   final List<Expense> expenses;
   final List<SettlementPayment> settlementPayments;
+  final bool isArchived;
+  final int? budgetCents;
 
   Group({
     String? id,
@@ -25,6 +27,8 @@ class Group {
     List<Person>? members,
     List<Expense>? expenses,
     List<SettlementPayment>? settlementPayments,
+    this.isArchived = false,
+    this.budgetCents,
   })  : id = id ?? const Uuid().v4(),
         creationDate = creationDate ?? DateTime.now(),
         referenceCurrency = referenceCurrency ?? Currency.ars,
@@ -42,6 +46,8 @@ class Group {
     List<Person>? members,
     List<Expense>? expenses,
     List<SettlementPayment>? settlementPayments,
+    bool? isArchived,
+    int? budgetCents,
   }) {
     return Group(
       id: id ?? this.id,
@@ -53,6 +59,8 @@ class Group {
       members: members ?? this.members,
       expenses: expenses ?? this.expenses,
       settlementPayments: settlementPayments ?? this.settlementPayments,
+      isArchived: isArchived ?? this.isArchived,
+      budgetCents: budgetCents ?? this.budgetCents,
     );
   }
 }

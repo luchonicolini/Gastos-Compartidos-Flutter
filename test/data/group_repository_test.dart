@@ -213,4 +213,112 @@ void main() {
       Money.fromString('12.34', Currency.brl),
     );
   });
+
+  test('operaciones granulares: guarda y elimina gasto sin tocar miembros',
+      () async {
+    final luciano = Person(id: 'p-1', name: 'Luciano');
+    final ana = Person(id: 'p-2', name: 'Ana');
+    final group = Group(
+      id: 'g-granular',
+      name: 'Viaje Granular',
+      members: [luciano, ana],
+    );
+    await repository.save(group);
+
+    final expense = Expense(
+      id: 'exp-granular',
+      description: 'Cena Granular',
+      amount: 1500,
+      payer: luciano,
+      participants: [luciano, ana],
+      category: 'Comida',
+      notes: 'Propina incluida',
+    );
+
+    // Guardar gasto de manera granular
+    await repository.saveExpense(group.id, expense);
+
+    var loaded = await repository.getById(group.id);
+    expect(loaded, isNotNull);
+    expect(loaded!.expenses, hasLength(1));
+    expect(loaded.expenses.single.description, 'Cena Granular');
+    expect(loaded.expenses.single.category, 'Comida');
+    expect(loaded.expenses.single.notes, 'Propina incluida');
+    expect(loaded.expenses.single.convertedAmount.cents, 150000);
+
+    // Eliminar gasto de manera granular
+    await repository.deleteExpense(expense.id);
+    loaded = await repository.getById(group.id);
+    expect(loaded!.expenses, isEmpty);
+    expect(loaded.members, hasLength(2)); // Los miembros siguen intactos
+  });
+
+  test('operaciones granulares: archivar grupo y gestionar miembros', () async {
+    final group = Group(
+      id: 'g-archive',
+      name: 'Grupo Para Archivar',
+      budgetCents: 5000000,
+    );
+    await repository.save(group);
+
+    // Agregar miembro granular
+    final marco = Person(id: 'p-marco', name: 'Marco');
+    await repository.addMember(group.id, marco);
+
+    var loaded = await repository.getById(group.id);
+    expect(loaded!.members, hasLength(1));
+    expect(loaded.members.single.name, 'Marco');
+    expect(loaded.budgetCents, 5000000);
+
+    // Archivar grupo
+    await repository.setGroupArchived(group.id, true);
+    loaded = await repository.getById(group.id);
+    expect(loaded!.isArchived, isTrue);
+
+    // Filtrar archivados en getAll
+    final activeOnly = await repository.getAll(includeArchived: false);
+    expect(activeOnly.any((g) => g.id == group.id), isFalse);
+
+    final all = await repository.getAll(includeArchived: true);
+    expect(all.any((g) => g.id == group.id), isTrue);
+  });
+
+  test('watchAll y watchById emiten actualizaciones reactivas', () async {
+    final person = Person(id: 'p-w', name: 'P');
+    final group = Group(
+      id: 'g-watch',
+      name: 'Grupo Reactivo',
+      members: [person],
+    );
+    await repository.save(group);
+
+    final events = <int>[];
+    final sub = repository.watchById(group.id).listen((g) {
+      if (g != null) {
+        events.add(g.expenses.length);
+      }
+    });
+
+    // Esperar primer evento inicial
+    await pumpEventQueue();
+
+    // Agregar gasto para gatillar actualización reactiva
+    await repository.saveExpense(
+      group.id,
+      Expense(
+        id: 'exp-w',
+        description: 'Reactivo',
+        amount: 200,
+        payer: person,
+        participants: [person],
+      ),
+    );
+
+    // Esperar procesamiento de eventos
+    await pumpEventQueue();
+    await sub.cancel();
+
+    expect(events.first, 0);
+    expect(events.last, 1);
+  });
 }

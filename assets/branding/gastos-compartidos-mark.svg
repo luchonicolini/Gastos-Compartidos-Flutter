@@ -1,0 +1,21 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gastos Compartidos: "the shared loop". Keep this artwork text-free for launcher-scale legibility. -->
+  <rect width="1024" height="1024" rx="232" fill="#11232D"/>
+
+  <!-- Three people / three contributions travelling through one continuous shared path. -->
+  <path d="M512 244C681 244 780 347 780 512C780 677 681 780 512 780C343 780 244 677 244 512C244 409 284 327 363 281"
+        stroke="#EAF8F6" stroke-width="72" stroke-linecap="round"/>
+  <path d="M364 281C408 255 456 244 512 244"
+        stroke="#14A6A8" stroke-width="72" stroke-linecap="round"/>
+
+  <!-- The three bright stops deliberately break the loop; no single person owns the route. -->
+  <circle cx="727" cy="427" r="76" fill="#F06D4F"/>
+  <circle cx="623" cy="734" r="76" fill="#6D57CF"/>
+  <circle cx="294" cy="536" r="76" fill="#14A6A8"/>
+
+  <!-- Central split: a crisp, distinctive ledger mark rather than a generic currency symbol. -->
+  <path d="M512 406V616M427 512H597" stroke="#11232D" stroke-width="54" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="117" fill="#F7FBFA"/>
+  <path d="M512 438V586M438 512H586" stroke="#11232D" stroke-width="42" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="20" fill="#14A6A8"/>
+</svg>

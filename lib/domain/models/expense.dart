@@ -28,6 +28,8 @@ class Expense {
   final Money convertedAmount;
   final Currency referenceCurrency;
   final double exchangeRate;
+  final String? category;
+  final String? notes;
 
   Expense({
     String? id,
@@ -45,6 +47,8 @@ class Expense {
     Money? originalAmount,
     Money? convertedAmount,
     this.exchangeRate = 1,
+    this.category,
+    this.notes,
   })  : id = id ?? const Uuid().v4(),
         date = date ?? DateTime.now(),
         payers = payers ??
@@ -83,6 +87,8 @@ class Expense {
     Money? convertedAmount,
     Currency? referenceCurrency,
     double? exchangeRate,
+    String? category,
+    String? notes,
   }) {
     final nextAmount = amount ?? this.amount;
     final nextReferenceCurrency = referenceCurrency ?? this.referenceCurrency;
@@ -102,6 +108,8 @@ class Expense {
       convertedAmount: convertedAmount ?? (amount == null ? this.convertedAmount : null),
       referenceCurrency: nextReferenceCurrency,
       exchangeRate: exchangeRate ?? this.exchangeRate,
+      category: category ?? this.category,
+      notes: notes ?? this.notes,
     );
   }
 }

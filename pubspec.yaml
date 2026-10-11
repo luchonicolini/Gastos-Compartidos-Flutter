@@ -38,6 +38,8 @@ dependencies:
   intl: ^0.20.3
   drift: ^2.35.2
   drift_flutter: ^0.3.1
+  shared_preferences: ^2.5.6
+  flutter_slidable: ^4.0.3
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +64,18 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Variable.ttf
+          weight: 400
+        - asset: assets/fonts/Figtree-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-Variable.ttf
+          weight: 700
+        - asset: assets/fonts/Figtree-Variable.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:
