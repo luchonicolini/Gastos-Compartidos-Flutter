@@ -9,18 +9,46 @@ abstract class OnboardingStatusStore {
 }
 
 class LocalOnboardingStatusStore implements OnboardingStatusStore {
-  LocalOnboardingStatusStore({SharedPreferencesAsync? preferences})
-    : _preferences = preferences ?? SharedPreferencesAsync();
+  LocalOnboardingStatusStore({this.preferences});
 
   static const key = 'onboarding_complete_v1';
-  final SharedPreferencesAsync _preferences;
+  final SharedPreferencesAsync? preferences;
+
+  SharedPreferencesAsync? _resolvePreferences() {
+    if (preferences != null) return preferences;
+    try {
+      return SharedPreferencesAsync();
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
-  Future<bool> isComplete() async => await _preferences.getBool(key) ?? false;
+  Future<bool> isComplete() async {
+    try {
+      final prefs = _resolvePreferences();
+      if (prefs == null) return false;
+      return await prefs.getBool(key) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
-  Future<void> markComplete() => _preferences.setBool(key, true);
+  Future<void> markComplete() async {
+    try {
+      final prefs = _resolvePreferences();
+      if (prefs == null) return;
+      await prefs.setBool(key, true);
+    } catch (_) {}
+  }
 
   @override
-  Future<void> reset() => _preferences.remove(key);
+  Future<void> reset() async {
+    try {
+      final prefs = _resolvePreferences();
+      if (prefs == null) return;
+      await prefs.remove(key);
+    } catch (_) {}
+  }
 }

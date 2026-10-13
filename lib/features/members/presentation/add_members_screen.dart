@@ -224,7 +224,9 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                         ],
                         const SizedBox(height: 20),
                         AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 180),
                           child: members.isEmpty
                               ? const _EmptyMembers(key: ValueKey('empty'))
                               : _MembersList(

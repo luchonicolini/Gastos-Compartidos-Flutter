@@ -30,8 +30,8 @@
 - [x] Reconstruir el estado vacío de grupos.
 - [x] Reconstruir la lista persistente de grupos con contenido.
 - [x] Reconstruir crear grupo con nombre, icono y color.
-- [ ] Reconstruir editar grupo.
-- [ ] Reconstruir eliminar grupo con confirmación.
+- [x] Reconstruir editar grupo.
+- [x] Reconstruir eliminar grupo con confirmación.
 - [x] Reconstruir el detalle de grupo.
 - [x] Reconstruir el alta inicial de integrantes.
 - [x] Implementar editar miembros.

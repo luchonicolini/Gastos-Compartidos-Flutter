@@ -6,19 +6,52 @@ abstract class AppSettingsStore {
 }
 
 class LocalAppSettingsStore implements AppSettingsStore {
-  LocalAppSettingsStore({SharedPreferencesAsync? preferences})
-      : _preferences = preferences ?? SharedPreferencesAsync();
+  LocalAppSettingsStore({this.preferences});
 
   static const _reduceMotionKey = 'app_settings_reduce_motion_v1';
-  final SharedPreferencesAsync _preferences;
+  final SharedPreferencesAsync? preferences;
+
+  SharedPreferencesAsync? _resolvePreferences() {
+    if (preferences != null) return preferences;
+    try {
+      return SharedPreferencesAsync();
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Future<bool> isReduceMotionEnabled() async {
-    return (await _preferences.getBool(_reduceMotionKey)) ?? false;
+    try {
+      final prefs = _resolvePreferences();
+      if (prefs == null) return false;
+      return (await prefs.getBool(_reduceMotionKey)) ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
   Future<void> setReduceMotionEnabled(bool enabled) async {
-    await _preferences.setBool(_reduceMotionKey, enabled);
+    try {
+      final prefs = _resolvePreferences();
+      if (prefs == null) return;
+      await prefs.setBool(_reduceMotionKey, enabled);
+    } catch (_) {}
+  }
+}
+
+class InMemoryAppSettingsStore implements AppSettingsStore {
+  InMemoryAppSettingsStore({bool initialReduceMotion = false})
+      : _reduceMotion = initialReduceMotion;
+
+  bool _reduceMotion;
+
+  @override
+  Future<bool> isReduceMotionEnabled() async => _reduceMotion;
+
+  @override
+  Future<void> setReduceMotionEnabled(bool enabled) async {
+    _reduceMotion = enabled;
   }
 }

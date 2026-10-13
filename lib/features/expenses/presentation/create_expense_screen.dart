@@ -1684,7 +1684,9 @@ class _PersonChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
           height: 46,
           padding: EdgeInsets.fromLTRB(6, 4, isSelected ? 12 : 16, 4),
           decoration: BoxDecoration(

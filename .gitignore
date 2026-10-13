@@ -52,3 +52,9 @@ legacy-ui-*.zip
 .codex/
 .impeccable/
 .agents/
+
+# Android signing secrets
+**/key.properties
+*.jks
+*.keystore
+

@@ -4,6 +4,8 @@ import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/currency.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
 import '../../onboarding/presentation/onboarding_screen.dart';
+import '../data/app_settings_store.dart';
+import 'app_settings_scope.dart';
 
 /// Pantalla de Configuración con diseño idéntico a las imágenes de referencia.
 class SettingsScreen extends StatefulWidget {
@@ -11,11 +13,13 @@ class SettingsScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.onboardingStore,
+    this.settingsStore,
     this.onDataCleared,
   });
 
   final LocalGroupRepository repository;
   final OnboardingStatusStore? onboardingStore;
+  final AppSettingsStore? settingsStore;
   final VoidCallback? onDataCleared;
 
   @override
@@ -26,14 +30,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
+  late final AppSettingsStore _settingsStore =
+      widget.settingsStore ?? LocalAppSettingsStore();
+
   String _themeMode = 'Usar sistema';
   bool _reduceMotion = false;
   Currency _defaultCurrency = Currency.ars;
+  bool _didInitSettings = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scope = AppSettingsScope.maybeOf(context);
+    if (scope != null) {
+      if (scope.reduceMotion != _reduceMotion) {
+        setState(() => _reduceMotion = scope.reduceMotion);
+      }
+    } else if (!_didInitSettings) {
+      _didInitSettings = true;
+      _settingsStore.isReduceMotionEnabled().then((enabled) {
+        if (mounted && enabled != _reduceMotion) {
+          setState(() => _reduceMotion = enabled);
+        }
+      });
+    }
+  }
+
+  void _onReduceMotionChanged(bool val) {
+    setState(() => _reduceMotion = val);
+    final scope = AppSettingsScope.maybeOf(context);
+    if (scope != null) {
+      scope.setReduceMotion(val);
+    } else {
+      _settingsStore.setReduceMotionEnabled(val);
+    }
   }
 
   void _onScroll() {
@@ -776,9 +812,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               inactiveTrackColor: const Color(0xFFD4DBDF),
                               trackOutlineColor:
                                   WidgetStateProperty.all(Colors.transparent),
-                              onChanged: (val) {
-                                setState(() => _reduceMotion = val);
-                              },
+                              onChanged: _onReduceMotionChanged,
                             ),
                           ),
                         ],

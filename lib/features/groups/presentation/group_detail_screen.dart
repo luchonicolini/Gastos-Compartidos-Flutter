@@ -257,58 +257,57 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
           ),
-          if (!isPersonas && !isCuentas)
-            PopupMenuButton<String>(
-              key: const Key('group-detail-menu-button'),
-              icon: const Icon(Icons.more_vert_rounded),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              onSelected: (value) {
-                if (value == 'edit') _openEditGroup();
-                if (value == 'members') _openManageMembers();
-                if (value == 'delete') _deleteGroup();
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  key: Key('group-detail-menu-edit'),
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit_outlined, size: 20),
-                      SizedBox(width: 12),
-                      Expanded(child: Text('Editar grupo')),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'members',
-                  child: Row(
-                    children: [
-                      Icon(Icons.group_outlined, size: 20),
-                      SizedBox(width: 12),
-                      Expanded(child: Text('Integrantes')),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline,
-                          size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Eliminar grupo',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          PopupMenuButton<String>(
+            key: const Key('group-detail-menu-button'),
+            icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
+            onSelected: (value) {
+              if (value == 'edit') _openEditGroup();
+              if (value == 'members') _openManageMembers();
+              if (value == 'delete') _deleteGroup();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                key: Key('group-detail-menu-edit'),
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Expanded(child: Text('Editar grupo')),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'members',
+                child: Row(
+                  children: [
+                    Icon(Icons.group_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Expanded(child: Text('Integrantes')),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline,
+                        size: 20, color: Colors.red),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Eliminar grupo',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -337,6 +336,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       repository: widget.repository,
       onGroupChanged: (updated) => setState(() => _group = updated),
       onAddExpense: () => _openAddExpense(),
+      onNavigateToBalances: () => setState(() => _selectedTab = 2),
     );
   }
 

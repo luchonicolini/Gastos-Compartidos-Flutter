@@ -40,12 +40,14 @@ class GroupExpensesView extends StatefulWidget {
     required this.repository,
     required this.onGroupChanged,
     required this.onAddExpense,
+    this.onNavigateToBalances,
   });
 
   final Group group;
   final LocalGroupRepository repository;
   final ValueChanged<Group> onGroupChanged;
   final VoidCallback onAddExpense;
+  final VoidCallback? onNavigateToBalances;
 
   @override
   State<GroupExpensesView> createState() => _GroupExpensesViewState();
@@ -298,17 +300,22 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
   }
 
   String _formatAmount(double value) {
-    if (value == value.roundToDouble()) {
-      final whole = value.toInt().toString();
-      final buffer = StringBuffer();
-      final len = whole.length;
-      for (var i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-        buffer.write(whole[i]);
-      }
-      return buffer.toString();
+    final isNegative = value < 0;
+    final absVal = value.abs();
+    final whole = absVal.truncate().toString();
+    final buffer = StringBuffer();
+    final len = whole.length;
+    for (var i = 0; i < len; i++) {
+      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
+      buffer.write(whole[i]);
     }
-    return value.toStringAsFixed(2).replaceAll('.', ',');
+    final formattedWhole = buffer.toString();
+    if (absVal == absVal.truncateToDouble()) {
+      return '${isNegative ? '-' : ''}$formattedWhole';
+    }
+    final decimal =
+        (absVal - absVal.truncate()).toStringAsFixed(2).substring(2);
+    return '${isNegative ? '-' : ''}$formattedWhole,$decimal';
   }
 
   @override
@@ -458,53 +465,56 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
           const SizedBox(height: 20),
 
           // Hero Card "Total gastado" (Imágenes 1, 3, 4)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDDF1EF),
+          Material(
+            color: const Color(0xFFDDF1EF),
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
               borderRadius: BorderRadius.circular(24),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total gastado',
-                        style: TextStyle(
-                          fontFamily: 'Figtree',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF586974),
-                        ),
+              onTap: widget.onNavigateToBalances,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total gastado',
+                            style: TextStyle(
+                              fontFamily: 'Figtree',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF586974),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            totalSpentText,
+                            style: const TextStyle(
+                              fontFamily: 'Figtree',
+                              fontSize: 36,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1.0,
+                              color: Color(0xFF11232D),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        totalSpentText,
-                        style: const TextStyle(
-                          fontFamily: 'Figtree',
-                          fontSize: 36,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1.0,
-                          color: Color(0xFF11232D),
-                        ),
+                    ),
+                    Text(
+                      countText,
+                      style: const TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF11232D),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Text(
-                  countText,
-                  style: const TextStyle(
-                    fontFamily: 'Figtree',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF11232D),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 16),

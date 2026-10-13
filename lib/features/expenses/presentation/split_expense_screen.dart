@@ -855,7 +855,9 @@ class _SplitExpenseScreenState extends State<SplitExpenseScreen> {
               key: Key(tab.$3),
               onTap: () => setState(() => _splitType = tab.$1),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 180),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color:

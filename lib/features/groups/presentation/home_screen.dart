@@ -9,6 +9,7 @@ import '../../../shared/group_visuals.dart';
 import 'create_group_screen.dart';
 import 'group_detail_screen.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
+import '../../settings/data/app_settings_store.dart';
 import '../../settings/presentation/settings_screen.dart';
 
 /// First destination after onboarding. It deliberately distinguishes a new
@@ -18,11 +19,13 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.onboardingStore,
+    this.settingsStore,
     this.onOpenSettings,
   });
 
   final LocalGroupRepository repository;
   final OnboardingStatusStore? onboardingStore;
+  final AppSettingsStore? settingsStore;
   final VoidCallback? onOpenSettings;
 
   @override
@@ -58,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => SettingsScreen(
           repository: widget.repository,
           onboardingStore: widget.onboardingStore,
+          settingsStore: widget.settingsStore,
           onDataCleared: () {
             setState(() {
               _groups = widget.repository.getAll();

@@ -590,7 +590,7 @@ class _MemberBalanceRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
 
           // Nombre de la persona y badge Vos
           Expanded(
@@ -604,19 +604,19 @@ class _MemberBalanceRow extends StatelessWidget {
                     style: const TextStyle(
                       fontFamily: 'Figtree',
                       fontWeight: FontWeight.w800,
-                      fontSize: 17,
+                      fontSize: 16,
                       color: Color(0xFF11232D),
                     ),
                   ),
                 ),
                 if (isSelf) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFDDF1EF),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       'Vos',
@@ -624,7 +624,7 @@ class _MemberBalanceRow extends StatelessWidget {
                         fontFamily: 'Figtree',
                         color: Color(0xFF0D7E88),
                         fontWeight: FontWeight.w800,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ),
@@ -632,7 +632,7 @@ class _MemberBalanceRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // Estado del balance
           Text(
@@ -640,7 +640,7 @@ class _MemberBalanceRow extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w700,
-              fontSize: 16,
+              fontSize: 15,
               color: statusColor,
             ),
           ),

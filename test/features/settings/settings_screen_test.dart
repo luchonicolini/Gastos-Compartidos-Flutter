@@ -5,6 +5,7 @@ import 'package:gastos_compartidos/data/database/app_database.dart' hide Group;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
 import 'package:gastos_compartidos/features/onboarding/data/onboarding_status_store.dart';
+import 'package:gastos_compartidos/features/settings/presentation/app_settings_scope.dart';
 import 'package:gastos_compartidos/features/settings/presentation/settings_screen.dart';
 
 class _FakeOnboardingStore implements OnboardingStatusStore {
@@ -267,5 +268,42 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets(
+      'reducir animaciones persiste el cambio y actualiza AppSettingsScope',
+      (tester) async {
+    setTestSize(tester);
+
+    var motionReduced = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return AppSettingsScope(
+              reduceMotion: motionReduced,
+              setReduceMotion: (val) => setState(() => motionReduced = val),
+              child: Builder(
+                builder: (innerContext) {
+                  return SettingsScreen(repository: repository);
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final switchFinder = find.byKey(const Key('settings-reduce-motion-switch'));
+    expect((tester.widget(switchFinder) as Switch).value, isFalse);
+    expect(motionReduced, isFalse);
+
+    await tester.tap(switchFinder);
+    await tester.pumpAndSettle();
+
+    expect((tester.widget(switchFinder) as Switch).value, isTrue);
+    expect(motionReduced, isTrue);
   });
 }

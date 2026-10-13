@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/local_group_repository.dart';
+import '../../../domain/models/group.dart';
 import '../../members/presentation/add_members_screen.dart';
 import '../application/group_operations.dart';
 
@@ -48,6 +49,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   String _iconName = 'grill';
   String _colorHex = '#0D7E88';
   bool _isSaving = false;
+  Group? _createdGroup;
+  bool _isCompleted = false;
 
   String get _name =>
       _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
@@ -67,9 +70,26 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     if (!_canContinue) return;
     setState(() => _isSaving = true);
     try {
-      final group = await GroupOperations(
-        widget.repository,
-      ).createGroup(name: _name, iconName: _iconName, colorHex: _colorHex);
+      final Group group;
+      if (_createdGroup == null) {
+        group = await GroupOperations(
+          widget.repository,
+        ).createGroup(name: _name, iconName: _iconName, colorHex: _colorHex);
+        _createdGroup = group;
+      } else {
+        final latest =
+            await widget.repository.getById(_createdGroup!.id) ?? _createdGroup!;
+        group = await GroupOperations(
+          widget.repository,
+        ).editGroup(
+          latest,
+          name: _name,
+          iconName: _iconName,
+          colorHex: _colorHex,
+        );
+        _createdGroup = group;
+      }
+
       if (mounted) {
         final completed = await Navigator.of(context).push<bool>(
           MaterialPageRoute(
@@ -77,7 +97,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 AddMembersScreen(repository: widget.repository, group: group),
           ),
         );
-        if (completed == true && mounted) Navigator.of(context).pop(true);
+        if (completed == true && mounted) {
+          _isCompleted = true;
+          Navigator.of(context).pop(true);
+          return;
+        }
       }
     } on ArgumentError catch (error) {
       if (!mounted) return;
@@ -86,7 +110,6 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           content: Text(error.message?.toString() ?? 'Revisá el nombre.'),
         ),
       );
-      setState(() => _isSaving = false);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +117,10 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           content: Text('No se pudo crear el grupo. Intentá de nuevo.'),
         ),
       );
-      setState(() => _isSaving = false);
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -106,6 +132,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
     return PopScope(
       canPop: canGoBack,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop && !_isCompleted && _createdGroup != null) {
+          await widget.repository.delete(_createdGroup!.id);
+        }
+      },
       child: Scaffold(
         body: SafeArea(
           child: Center(
@@ -121,7 +152,15 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         if (canGoBack) ...[
                           IconButton(
                             key: const Key('create-group-back-button'),
-                            onPressed: () => Navigator.of(context).maybePop(),
+                            onPressed: () async {
+                              if (!_isCompleted && _createdGroup != null) {
+                                await widget.repository.delete(_createdGroup!.id);
+                                _createdGroup = null;
+                              }
+                              if (context.mounted) {
+                                Navigator.of(context).maybePop();
+                              }
+                            },
                             icon: const Icon(Icons.arrow_back_rounded),
                             tooltip: 'Volver a Mis grupos',
                           ),
