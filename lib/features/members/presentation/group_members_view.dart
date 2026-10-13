@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/person.dart';
+import '../domain/member_name_disambiguator.dart';
 import '../../groups/application/group_operations.dart';
 
 /// Vista de "Personas" del grupo.
@@ -110,7 +111,7 @@ class _GroupMembersViewState extends State<GroupMembersView> {
 
           // Subtítulo
           const Text(
-            'Administrá las personas que comparten\ngastos en este viaje.',
+            'Administrá las personas que comparten\ngastos en este grupo.',
             style: TextStyle(
               fontFamily: 'Figtree',
               fontSize: 16,
@@ -813,6 +814,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   late final TextEditingController _controller =
       TextEditingController(text: widget.initialName);
   String? _error;
+  String? _suggestedName;
 
   @override
   void dispose() {
@@ -823,14 +825,33 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'El nombre no puede estar vacío');
+      setState(() {
+        _error = 'El nombre no puede estar vacío';
+        _suggestedName = null;
+      });
       return;
     }
     if (widget.existingNames.contains(name.toLowerCase())) {
-      setState(() => _error = 'Ya existe un miembro con ese nombre');
+      final suggestion =
+          MemberNameDisambiguator.nextNumberedName(name, widget.existingNames);
+      setState(() {
+        _error = 'Ya existe un miembro con ese nombre';
+        _suggestedName = suggestion;
+      });
       return;
     }
     Navigator.of(context).pop(name);
+  }
+
+  void _applySuggestion(String suggestion) {
+    _controller.text = suggestion;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.length),
+    );
+    setState(() {
+      _error = null;
+      _suggestedName = null;
+    });
   }
 
   @override
@@ -902,6 +923,14 @@ class _EditNameDialogState extends State<_EditNameDialog> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.only(top: 4, bottom: 4),
                     ),
+                    onChanged: (_) {
+                      if (_error != null) {
+                        setState(() {
+                          _error = null;
+                          _suggestedName = null;
+                        });
+                      }
+                    },
                     onSubmitted: (_) => _submit(),
                   ),
                 ],
@@ -916,6 +945,63 @@ class _EditNameDialogState extends State<_EditNameDialog> {
                   color: Colors.red,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (_suggestedName != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lightbulb_outline_rounded,
+                      size: 18,
+                      color: Color(0xFF16A34A),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sugerencia: "$_suggestedName"',
+                        style: const TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF166534),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      key: const Key('apply-suggested-name-button'),
+                      onTap: () => _applySuggestion(_suggestedName!),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Usar',
+                          style: TextStyle(
+                            fontFamily: 'Figtree',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -984,6 +1070,7 @@ class AddPersonDialog extends StatefulWidget {
 class _AddPersonDialogState extends State<AddPersonDialog> {
   final _controller = TextEditingController();
   String? _error;
+  String? _suggestedName;
 
   @override
   void dispose() {
@@ -994,14 +1081,33 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
   void _submit() {
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'El nombre no puede estar vacío');
+      setState(() {
+        _error = 'El nombre no puede estar vacío';
+        _suggestedName = null;
+      });
       return;
     }
     if (widget.existingNames.contains(name.toLowerCase())) {
-      setState(() => _error = 'Ya existe un miembro con ese nombre');
+      final suggestion =
+          MemberNameDisambiguator.nextNumberedName(name, widget.existingNames);
+      setState(() {
+        _error = 'Ya existe un miembro con ese nombre';
+        _suggestedName = suggestion;
+      });
       return;
     }
     Navigator.of(context).pop(name);
+  }
+
+  void _applySuggestion(String suggestion) {
+    _controller.text = suggestion;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.length),
+    );
+    setState(() {
+      _error = null;
+      _suggestedName = null;
+    });
   }
 
   @override
@@ -1038,7 +1144,7 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Sumá a una persona que comparta gastos en este viaje.',
+              'Sumá a una persona que comparta gastos en este grupo.',
               style: TextStyle(
                 fontFamily: 'Figtree',
                 fontSize: 14,
@@ -1092,6 +1198,14 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.only(top: 4, bottom: 4),
                     ),
+                    onChanged: (_) {
+                      if (_error != null) {
+                        setState(() {
+                          _error = null;
+                          _suggestedName = null;
+                        });
+                      }
+                    },
                     onSubmitted: (_) => _submit(),
                   ),
                 ],
@@ -1106,6 +1220,63 @@ class _AddPersonDialogState extends State<AddPersonDialog> {
                   color: Colors.red,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (_suggestedName != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.lightbulb_outline_rounded,
+                      size: 18,
+                      color: Color(0xFF16A34A),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sugerencia: "$_suggestedName"',
+                        style: const TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF166534),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      key: const Key('apply-suggested-name-add-dialog-button'),
+                      onTap: () => _applySuggestion(_suggestedName!),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Usar',
+                          style: TextStyle(
+                            fontFamily: 'Figtree',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

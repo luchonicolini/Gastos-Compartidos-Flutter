@@ -5,6 +5,7 @@ import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/person.dart';
 import '../../../shared/group_visuals.dart';
+import '../domain/member_name_disambiguator.dart';
 import '../../expenses/presentation/create_expense_screen.dart';
 import '../../groups/application/group_operations.dart';
 
@@ -25,6 +26,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   final _controller = TextEditingController();
   late Group _group = widget.group;
   bool _saving = false;
+  String? _duplicateSuggestion;
 
   List<Person> get _members =>
       _group.members.where((item) => !item.isArchived).toList();
@@ -38,7 +40,24 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
 
   Future<void> _add() async {
     if (!_canAdd) return;
-    setState(() => _saving = true);
+    final name = _controller.text.trim();
+    final existingNames =
+        _group.members.map((m) => m.name.toLowerCase()).toSet();
+    if (existingNames.contains(name.toLowerCase())) {
+      final suggestion = MemberNameDisambiguator.nextNumberedName(
+        name,
+        _group.members.map((m) => m.name),
+      );
+      setState(() {
+        _duplicateSuggestion = suggestion;
+      });
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _duplicateSuggestion = null;
+    });
     try {
       final result = await GroupOperations(
         widget.repository,
@@ -48,6 +67,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
       setState(() {
         _group = result;
         _saving = false;
+        _duplicateSuggestion = null;
       });
     } on ArgumentError catch (error) {
       if (!mounted) return;
@@ -58,6 +78,16 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
         ),
       );
     }
+  }
+
+  void _applySuggestion(String suggestion) {
+    _controller.text = suggestion;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.length),
+    );
+    setState(() {
+      _duplicateSuggestion = null;
+    });
   }
 
   Future<void> _archive(Person person) async {
@@ -100,7 +130,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '¿Quiénes viajan?',
+                          '¿Quiénes participan?',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.6,
@@ -119,9 +149,79 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                           controller: _controller,
                           active: _canAdd,
                           saving: _saving,
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (_) {
+                            if (_duplicateSuggestion != null) {
+                              setState(() => _duplicateSuggestion = null);
+                            } else {
+                              setState(() {});
+                            }
+                          },
                           onAdd: _add,
                         ),
+                        if (_duplicateSuggestion != null) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF86EFAC),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.lightbulb_outline_rounded,
+                                  size: 20,
+                                  color: Color(0xFF16A34A),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Ya existe en el grupo. Sugerencia: "$_duplicateSuggestion"',
+                                    style: const TextStyle(
+                                      fontFamily: 'Figtree',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF166534),
+                                    ),
+                                  ),
+                                ),
+                                InkWell(
+                                  key: const Key(
+                                    'apply-suggested-name-add-screen-button',
+                                  ),
+                                  onTap: () =>
+                                      _applySuggestion(_duplicateSuggestion!),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF16A34A),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text(
+                                      'Usar',
+                                      style: TextStyle(
+                                        fontFamily: 'Figtree',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 180),

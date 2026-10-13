@@ -35,12 +35,18 @@ class EditGroupScreen extends StatefulWidget {
 
 class _EditGroupScreenState extends State<EditGroupScreen> {
   static const _choices = <_GroupIconChoice>[
-    _GroupIconChoice('flight', Icons.flight_takeoff_rounded),
-    _GroupIconChoice('briefcase', Icons.business_center_outlined),
-    _GroupIconChoice('beach', Icons.beach_access_outlined),
-    _GroupIconChoice('mountain', Icons.terrain_outlined),
+    _GroupIconChoice('grill', Icons.outdoor_grill_outlined),
+    _GroupIconChoice('food', Icons.restaurant_outlined),
     _GroupIconChoice('home', Icons.home_outlined),
+    _GroupIconChoice('flight', Icons.flight_takeoff_rounded),
+    _GroupIconChoice('beach', Icons.beach_access_outlined),
     _GroupIconChoice('toast', Icons.wine_bar_outlined),
+    _GroupIconChoice('soccer', Icons.sports_soccer_outlined),
+    _GroupIconChoice('cart', Icons.shopping_cart_outlined),
+    _GroupIconChoice('gift', Icons.card_giftcard_outlined),
+    _GroupIconChoice('briefcase', Icons.business_center_outlined),
+    _GroupIconChoice('mountain', Icons.terrain_outlined),
+    _GroupIconChoice('celebration', Icons.celebration_outlined),
   ];
 
   static const _colors = <_GroupColorChoice>[
@@ -643,7 +649,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                       _buildSectionTitle('Personalización'),
                       const SizedBox(height: 4),
                       const Text(
-                        'Elegí cómo reconocer este viaje en tu lista.',
+                        'Elegí cómo reconocer este grupo en tu lista.',
                         style: TextStyle(
                           fontFamily: 'Figtree',
                           fontSize: 14,
@@ -820,8 +826,9 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   }
 
   Widget _buildIconPicker() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
         for (final choice in _choices)
           InkWell(

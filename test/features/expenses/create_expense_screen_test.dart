@@ -405,7 +405,7 @@ void main() {
     await tester.tap(find.byKey(const Key('exchange-rate-banner')));
     await tester.pumpAndSettle();
     expect(
-      find.text('Última cotización en este viaje: \$ 200'),
+      find.text('Última cotización en este grupo: \$ 200'),
       findsOneWidget,
     );
   });

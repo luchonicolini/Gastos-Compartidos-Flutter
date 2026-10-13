@@ -744,7 +744,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                'Última cotización en este viaje: ${refCurrency.symbol} ${_formatRate(lastRate)}',
+                                'Última cotización en este grupo: ${refCurrency.symbol} ${_formatRate(lastRate)}',
                                 style: const TextStyle(
                                   fontFamily: 'Figtree',
                                   fontSize: 12,

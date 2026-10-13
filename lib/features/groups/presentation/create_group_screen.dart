@@ -21,12 +21,18 @@ class CreateGroupScreen extends StatefulWidget {
 
 class _CreateGroupScreenState extends State<CreateGroupScreen> {
   static const _choices = <_GroupIconChoice>[
-    _GroupIconChoice('flight', Icons.flight_takeoff_rounded),
-    _GroupIconChoice('briefcase', Icons.business_center_outlined),
-    _GroupIconChoice('beach', Icons.beach_access_outlined),
-    _GroupIconChoice('mountain', Icons.terrain_outlined),
+    _GroupIconChoice('grill', Icons.outdoor_grill_outlined),
+    _GroupIconChoice('food', Icons.restaurant_outlined),
     _GroupIconChoice('home', Icons.home_outlined),
+    _GroupIconChoice('flight', Icons.flight_takeoff_rounded),
+    _GroupIconChoice('beach', Icons.beach_access_outlined),
     _GroupIconChoice('toast', Icons.wine_bar_outlined),
+    _GroupIconChoice('soccer', Icons.sports_soccer_outlined),
+    _GroupIconChoice('cart', Icons.shopping_cart_outlined),
+    _GroupIconChoice('gift', Icons.card_giftcard_outlined),
+    _GroupIconChoice('briefcase', Icons.business_center_outlined),
+    _GroupIconChoice('mountain', Icons.terrain_outlined),
+    _GroupIconChoice('celebration', Icons.celebration_outlined),
   ];
 
   static const _colors = <_GroupColorChoice>[
@@ -39,7 +45,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   ];
 
   final _nameController = TextEditingController();
-  String _iconName = 'flight';
+  String _iconName = 'grill';
   String _colorHex = '#0D7E88';
   bool _isSaving = false;
 
@@ -137,7 +143,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '¿A dónde viajan?',
+                          '¿Cómo se llama el grupo?',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.6,
@@ -329,7 +335,7 @@ class _GroupNameField extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
             decoration: InputDecoration(
-              hintText: 'Ej. Brasil 2026',
+              hintText: 'Ej. Asado del finde, Gastos del depto, Viaje a Brasil',
               hintStyle: theme.textTheme.titleLarge?.copyWith(
                 color: colors.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
@@ -363,8 +369,9 @@ class _IconPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
         for (final choice in choices)
           Semantics(

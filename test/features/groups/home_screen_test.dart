@@ -189,7 +189,7 @@ void main() {
 
     // Encabezado
     expect(find.text('Mis grupos'), findsOneWidget);
-    expect(find.text('Tus viajes y gastos compartidos.'), findsOneWidget);
+    expect(find.text('Tus grupos y gastos compartidos.'), findsOneWidget);
     expect(find.byKey(const Key('settings-header-button')), findsOneWidget);
     expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
@@ -232,7 +232,7 @@ void main() {
 
     expect(find.text('Grupos finalizados'), findsOneWidget);
     expect(
-      find.textContaining('Por el momento no tenés grupos finalizados'),
+      find.textContaining('Por el momento no tenés grupos archivados'),
       findsOneWidget,
     );
     expect(find.text('Entendido'), findsOneWidget);
@@ -280,7 +280,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Estado vacío inicial
-    expect(find.text('Empezá tu próximo viaje'), findsOneWidget);
+    expect(find.text('Creá tu primer grupo'), findsOneWidget);
     await tester.tap(find.text('Crear mi primer grupo'));
     await tester.pumpAndSettle();
 

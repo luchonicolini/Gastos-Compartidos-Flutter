@@ -175,7 +175,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
 
           // Subtítulo
           const Text(
-            'Cuando termine el viaje, te vamos a mostrar\nla forma más simple de saldar.',
+            'Cuando haya cuentas por liquidar, te vamos a mostrar\nla forma más simple de saldar.',
             style: TextStyle(
               fontFamily: 'Figtree',
               fontSize: 16,

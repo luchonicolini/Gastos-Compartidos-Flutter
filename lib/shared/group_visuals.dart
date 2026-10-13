@@ -14,6 +14,18 @@ IconData groupIconFromName(String? iconName) {
       return Icons.home_outlined;
     case 'toast':
       return Icons.wine_bar_outlined;
+    case 'grill':
+      return Icons.outdoor_grill_outlined;
+    case 'food':
+      return Icons.restaurant_outlined;
+    case 'soccer':
+      return Icons.sports_soccer_outlined;
+    case 'cart':
+      return Icons.shopping_cart_outlined;
+    case 'gift':
+      return Icons.card_giftcard_outlined;
+    case 'celebration':
+      return Icons.celebration_outlined;
     case 'flight':
     default:
       return Icons.flight_takeoff_rounded;

@@ -94,7 +94,7 @@ void main() {
 
     // Header
     expect(find.text('Todos los gastos'), findsOneWidget);
-    expect(find.text('Revisá y editá los gastos del viaje.'), findsOneWidget);
+    expect(find.text('Revisá y editá los gastos de este grupo.'), findsOneWidget);
 
     // Empty state central
     expect(find.textContaining('Todavía no cargaste'), findsOneWidget);

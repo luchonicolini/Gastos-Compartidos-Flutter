@@ -29,7 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mis grupos'), findsOneWidget);
-    expect(find.text('Tus viajes y gastos compartidos.'), findsOneWidget);
+    expect(find.text('Tus grupos y gastos compartidos.'), findsOneWidget);
     expect(find.text('Viaje guardado'), findsOneWidget);
     expect(find.text('Crear un nuevo grupo'), findsOneWidget);
     expect(find.text('Ver grupos finalizados'), findsOneWidget);
@@ -48,7 +48,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mis grupos'), findsOneWidget);
-    expect(find.text('Empezá tu próximo viaje'), findsOneWidget);
+    expect(find.text('Creá tu primer grupo'), findsOneWidget);
     expect(find.text('Crear mi primer grupo'), findsOneWidget);
   });
 
@@ -67,7 +67,7 @@ void main() {
 
     await tester.tap(find.text('Crear mi primer grupo'));
     await tester.pumpAndSettle();
-    expect(find.text('¿A dónde viajan?'), findsOneWidget);
+    expect(find.text('¿Cómo se llama el grupo?'), findsOneWidget);
 
     final continueButton = find.byKey(const Key('continue-create-group'));
     expect(tester.widget<FilledButton>(continueButton).onPressed, isNull);
@@ -76,8 +76,15 @@ void main() {
     await tester.pump();
     expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
 
-    await tester.tap(find.bySemanticsLabel('Color #C6500A'));
-    await tester.tap(find.bySemanticsLabel('Ícono beach'));
+    final colorFinder = find.bySemanticsLabel('Color #C6500A');
+    await tester.ensureVisible(colorFinder);
+    await tester.tap(colorFinder);
+
+    final iconFinder = find.bySemanticsLabel('Ícono beach');
+    await tester.ensureVisible(iconFinder);
+    await tester.tap(iconFinder);
+
+    await tester.ensureVisible(continueButton);
     await tester.tap(continueButton);
     await tester.pumpAndSettle();
 
@@ -86,7 +93,7 @@ void main() {
     expect(groups.single.name, 'Brasil 2026');
     expect(groups.single.iconName, 'beach');
     expect(groups.single.colorHex, '#C6500A');
-    expect(find.text('¿Quiénes viajan?'), findsOneWidget);
+    expect(find.text('¿Quiénes participan?'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('member-name-field')), 'Ana');
     await tester.tap(find.byKey(const Key('add-member')));

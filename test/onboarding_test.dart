@@ -46,7 +46,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.completed, isTrue);
-    expect(find.text('Empezá tu próximo viaje'), findsOneWidget);
+    expect(find.text('Creá tu primer grupo'), findsOneWidget);
     await tester.pumpWidget(
       GastosCompartidosApp(database: database, onboardingStore: store),
     );
@@ -68,6 +68,6 @@ void main() {
     await tester.tap(find.text('Saltar'));
     await tester.pumpAndSettle();
     expect(store.completed, isTrue);
-    expect(find.text('Empezá tu próximo viaje'), findsOneWidget);
+    expect(find.text('Creá tu primer grupo'), findsOneWidget);
   });
 }

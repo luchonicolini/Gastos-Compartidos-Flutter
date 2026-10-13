@@ -83,7 +83,7 @@ void main() {
     // Título y subtítulo
     expect(find.text('¿Quiénes participan?'), findsOneWidget);
     expect(
-      find.text('Administrá las personas que comparten\ngastos en este viaje.'),
+      find.text('Administrá las personas que comparten\ngastos en este grupo.'),
       findsOneWidget,
     );
     expect(find.text('3 personas activas'), findsOneWidget);
@@ -227,7 +227,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Sumá a una persona que comparta gastos en este viaje.'),
+      find.text('Sumá a una persona que comparta gastos en este grupo.'),
       findsOneWidget,
     );
     expect(find.byKey(const Key('confirm-add-person-button')), findsOneWidget);
@@ -292,5 +292,78 @@ void main() {
     // Las acciones de Slidable deben ser visibles
     expect(find.byKey(Key('slidable-edit-member-${marco.id}')), findsOneWidget);
     expect(find.byKey(Key('slidable-archive-member-${marco.id}')), findsOneWidget);
+  });
+
+  testWidgets(
+      'sugiere alternativa numerada si se intenta agregar un nombre existente',
+      (tester) async {
+    setTestSize(tester);
+    await tester.pumpWidget(buildScreen(sampleGroup));
+    await tester.pumpAndSettle();
+
+    // Tocar "+ Agregar persona"
+    await tester.tap(find.byKey(const Key('add-person-button')));
+    await tester.pumpAndSettle();
+
+    // Ingresar "Ana" (que ya existe)
+    await tester.enterText(
+        find.byKey(const Key('add-person-name-field')), 'Ana');
+    await tester.tap(find.byKey(const Key('confirm-add-person-button')));
+    await tester.pumpAndSettle();
+
+    // Debe mostrar el error y la sugerencia
+    expect(find.text('Ya existe un miembro con ese nombre'), findsOneWidget);
+    expect(find.text('Sugerencia: "Ana (2)"'), findsOneWidget);
+    expect(
+        find.byKey(const Key('apply-suggested-name-add-dialog-button')),
+        findsOneWidget);
+
+    // Tocar "Usar" para aplicar la sugerencia
+    await tester.tap(
+        find.byKey(const Key('apply-suggested-name-add-dialog-button')));
+    await tester.pumpAndSettle();
+
+    // El campo ahora tiene "Ana (2)" y no hay error
+    expect(find.text('Ya existe un miembro con ese nombre'), findsNothing);
+    expect(find.text('Ana (2)'), findsOneWidget);
+
+    // Confirmar
+    await tester.tap(find.byKey(const Key('confirm-add-person-button')));
+    await tester.pumpAndSettle();
+
+    // Ahora Ana (2) se agregó al grupo
+    expect(find.text('Ana (2)'), findsOneWidget);
+  });
+
+  testWidgets(
+      'sugiere alternativa si se intenta editar con un nombre existente',
+      (tester) async {
+    setTestSize(tester);
+    await tester.pumpWidget(buildScreen(sampleGroup));
+    await tester.pumpAndSettle();
+
+    // Tocar tres puntos de Marco y Editar
+    await tester.tap(find.byKey(Key('member-menu-${marco.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Editar nombre'));
+    await tester.pumpAndSettle();
+
+    // Cambiar por "Ana" (que ya existe)
+    await tester.enterText(find.byKey(const Key('edit-name-field')), 'Ana');
+    await tester.tap(find.byKey(const Key('save-name-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ya existe un miembro con ese nombre'), findsOneWidget);
+    expect(find.text('Sugerencia: "Ana (2)"'), findsOneWidget);
+    expect(find.byKey(const Key('apply-suggested-name-button')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('apply-suggested-name-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ana (2)'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('save-name-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ana (2)'), findsOneWidget);
   });
 }

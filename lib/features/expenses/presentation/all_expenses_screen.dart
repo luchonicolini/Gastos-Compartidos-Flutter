@@ -340,7 +340,7 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Revisá y editá los gastos del viaje.',
+            'Revisá y editá los gastos de este grupo.',
             style: TextStyle(
               fontFamily: 'Figtree',
               fontSize: 16,
@@ -447,7 +447,7 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Revisá y editá los gastos del viaje.',
+            'Revisá y editá los gastos de este grupo.',
             style: TextStyle(
               fontFamily: 'Figtree',
               fontSize: 16,

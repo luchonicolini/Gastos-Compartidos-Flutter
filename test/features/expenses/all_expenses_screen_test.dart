@@ -128,7 +128,7 @@ void main() {
 
     // Título y subtítulo
     expect(find.text('Todos los gastos'), findsOneWidget);
-    expect(find.text('Revisá y editá los gastos del viaje.'), findsOneWidget);
+    expect(find.text('Revisá y editá los gastos de este grupo.'), findsOneWidget);
 
     // Tarjeta menta de estado vacío
     expect(find.text('Todavía no cargaste\ngastos'), findsOneWidget);

@@ -145,7 +145,7 @@ class _EmptyGroupsHome extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Tus viajes y gastos compartidos.',
+                          'Tus grupos y gastos compartidos.',
                           style: TextStyle(
                             fontFamily: 'Figtree',
                             fontSize: 16,
@@ -166,7 +166,7 @@ class _EmptyGroupsHome extends StatelessWidget {
                         const _JourneyStarterIllustration(),
                         const SizedBox(height: 20),
                         Text(
-                          'Empezá tu próximo viaje',
+                          'Creá tu primer grupo',
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.35,
@@ -250,9 +250,9 @@ class _JourneyStarterIllustration extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.flight_takeoff_rounded,
+                        Icons.groups_rounded,
                         color: colors.onPrimary,
-                        size: 23,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -598,7 +598,7 @@ class _GroupsListView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Por el momento no tenés grupos finalizados. Cuando un viaje termine y todas las cuentas estén saldadas, vas a poder archivarlo acá.',
+                'Por el momento no tenés grupos archivados. Cuando salden todas las cuentas y no usen más un grupo, vas a poder archivarlo acá.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Figtree',
@@ -670,7 +670,7 @@ class _GroupsListView extends StatelessWidget {
                             ),
                             SizedBox(height: 6),
                             Text(
-                              'Tus viajes y gastos compartidos.',
+                              'Tus grupos y gastos compartidos.',
                               style: TextStyle(
                                 fontFamily: 'Figtree',
                                 fontSize: 16,

@@ -108,7 +108,7 @@ void main() {
     expect(find.text('Así van las cuentas'), findsOneWidget);
     expect(
       find.text(
-        'Cuando termine el viaje, te vamos a mostrar\nla forma más simple de saldar.',
+        'Cuando haya cuentas por liquidar, te vamos a mostrar\nla forma más simple de saldar.',
       ),
       findsOneWidget,
     );

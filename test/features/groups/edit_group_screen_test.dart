@@ -95,7 +95,7 @@ void main() {
     // Sección 2: Personalización
     expect(find.text('Personalización'), findsOneWidget);
     expect(
-      find.text('Elegí cómo reconocer este viaje en tu lista.'),
+      find.text('Elegí cómo reconocer este grupo en tu lista.'),
       findsOneWidget,
     );
     expect(find.text('Vista previa'), findsOneWidget);
