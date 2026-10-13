@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../../core/theme/app_theme.dart';
 
@@ -117,7 +119,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                      padding: const EdgeInsets.only(top: 8, bottom: 16),
+                      child: SmoothPageIndicator(
+                        controller: _controller,
+                        count: _pages.length,
+                        effect: ExpandingDotsEffect(
+                          dotWidth: 8,
+                          dotHeight: 8,
+                          expansionFactor: 3.5,
+                          spacing: 6,
+                          activeDotColor: Theme.of(context).colorScheme.primary,
+                          dotColor:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? AppPalette.darkTrack
+                                  : AppPalette.lightTrack,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                       child: FilledButton(
                         onPressed: _finishing ? null : _next,
                         child: Text(
@@ -187,6 +207,8 @@ class _OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final artHeight =
@@ -199,28 +221,44 @@ class _OnboardingPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: artHeight,
-                child: ExcludeSemantics(child: _Illustration(index: index)),
+              FadeIn(
+                duration: const Duration(milliseconds: 350),
+                animate: !disableAnimations,
+                child: SizedBox(
+                  height: artHeight,
+                  child: ExcludeSemantics(child: _Illustration(index: index)),
+                ),
               ),
               const SizedBox(height: 18),
-              Text(
-                copy.title,
-                key: ValueKey('onboarding-title-$index'),
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                  height: 1.08,
-                  letterSpacing: -0.8,
+              FadeInUp(
+                from: 14,
+                duration: const Duration(milliseconds: 320),
+                delay: const Duration(milliseconds: 60),
+                animate: !disableAnimations,
+                child: Text(
+                  copy.title,
+                  key: ValueKey('onboarding-title-$index'),
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                    height: 1.08,
+                    letterSpacing: -0.8,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                copy.description,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 16.5,
-                  height: 1.48,
-                  color: theme.colorScheme.onSurfaceVariant,
+              FadeInUp(
+                from: 14,
+                duration: const Duration(milliseconds: 320),
+                delay: const Duration(milliseconds: 120),
+                animate: !disableAnimations,
+                child: Text(
+                  copy.description,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontSize: 16.5,
+                    height: 1.48,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],

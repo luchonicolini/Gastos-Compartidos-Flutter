@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/currency.dart';
+import '../../onboarding/data/onboarding_status_store.dart';
 import '../../onboarding/presentation/onboarding_screen.dart';
 
 /// Pantalla de Configuración con diseño idéntico a las imágenes de referencia.
@@ -9,10 +10,12 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     super.key,
     required this.repository,
+    this.onboardingStore,
     this.onDataCleared,
   });
 
   final LocalGroupRepository repository;
+  final OnboardingStatusStore? onboardingStore;
   final VoidCallback? onDataCleared;
 
   @override
@@ -431,14 +434,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showHowItWorks() {
+    _showOnboardingPreview();
+  }
+
+  void _showOnboardingPreview() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          body: OnboardingScreen(
-            onFinish: () async {
-              Navigator.of(context).pop();
-            },
-          ),
+        builder: (_) => OnboardingScreen(
+          onFinish: () async {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resetOnboarding() async {
+    final store = widget.onboardingStore ?? LocalOnboardingStatusStore();
+    await store.reset();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Onboarding restablecido. Se mostrará la próxima vez que abras la app.',
         ),
       ),
     );
@@ -887,6 +905,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.info_outline_rounded,
                             title: 'Licencias de código abierto',
                             onTap: _showLicenses,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 6. MODO DE PRUEBA
+                      _buildSectionTitle('Modo de prueba'),
+                      const SizedBox(height: 10),
+                      _buildSettingsCard(
+                        children: [
+                          _SettingsTile(
+                            key: const Key('settings-test-onboarding-tile'),
+                            icon: Icons.slideshow_rounded,
+                            iconColor: const Color(0xFF0D7E88),
+                            iconBgColor: const Color(0xFFE6F4F5),
+                            title: 'Ver Onboarding',
+                            subtitle:
+                                'Probar el flujo de bienvenida y sus animaciones.',
+                            onTap: _showOnboardingPreview,
+                          ),
+                          const _CardDivider(),
+                          _SettingsTile(
+                            key: const Key('settings-reset-onboarding-tile'),
+                            icon: Icons.restart_alt_rounded,
+                            iconColor: const Color(0xFFD97706),
+                            iconBgColor: const Color(0xFFFEF3C7),
+                            title: 'Restablecer Onboarding',
+                            subtitle:
+                                'Volver a mostrar la bienvenida al abrir la app.',
+                            onTap: _resetOnboarding,
                           ),
                         ],
                       ),

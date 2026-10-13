@@ -4,6 +4,8 @@ abstract class OnboardingStatusStore {
   Future<bool> isComplete();
 
   Future<void> markComplete();
+
+  Future<void> reset();
 }
 
 class LocalOnboardingStatusStore implements OnboardingStatusStore {
@@ -18,4 +20,7 @@ class LocalOnboardingStatusStore implements OnboardingStatusStore {
 
   @override
   Future<void> markComplete() => _preferences.setBool(key, true);
+
+  @override
+  Future<void> reset() => _preferences.remove(key);
 }

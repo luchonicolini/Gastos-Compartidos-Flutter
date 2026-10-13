@@ -12,6 +12,9 @@ class _CompletedOnboarding implements OnboardingStatusStore {
 
   @override
   Future<void> markComplete() async {}
+
+  @override
+  Future<void> reset() async {}
 }
 
 void main() {

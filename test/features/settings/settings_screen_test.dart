@@ -4,7 +4,21 @@ import 'package:gastos_compartidos/core/theme/app_theme.dart';
 import 'package:gastos_compartidos/data/database/app_database.dart' hide Group;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
+import 'package:gastos_compartidos/features/onboarding/data/onboarding_status_store.dart';
 import 'package:gastos_compartidos/features/settings/presentation/settings_screen.dart';
+
+class _FakeOnboardingStore implements OnboardingStatusStore {
+  bool resetCalled = false;
+
+  @override
+  Future<bool> isComplete() async => true;
+
+  @override
+  Future<void> markComplete() async {}
+
+  @override
+  Future<void> reset() async => resetCalled = true;
+}
 
 void main() {
   late AppDatabase database;
@@ -94,6 +108,11 @@ void main() {
     expect(find.text('1.0.0'), findsOneWidget);
     expect(find.text('Términos de uso'), findsOneWidget);
     expect(find.text('Licencias de código abierto'), findsOneWidget);
+
+    // Modo de prueba
+    expect(find.text('Modo de prueba'), findsOneWidget);
+    expect(find.text('Ver Onboarding'), findsOneWidget);
+    expect(find.text('Restablecer Onboarding'), findsOneWidget);
   });
 
   testWidgets('permite cambiar tema y alternar reducir animaciones',
@@ -207,5 +226,46 @@ void main() {
 
     expect(clearedCalled, isTrue);
     expect((await repository.getAll()).length, 0);
+  });
+
+  testWidgets('permite ver y restablecer el Onboarding desde Modo de prueba',
+      (tester) async {
+    setTestSize(tester);
+
+    final store = _FakeOnboardingStore();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: SettingsScreen(
+          repository: repository,
+          onboardingStore: store,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tocar Ver Onboarding
+    await tester.tap(find.byKey(const Key('settings-test-onboarding-tile')));
+    await tester.pumpAndSettle();
+
+    // Comprueba que abrió la pantalla de Onboarding
+    expect(find.text('¿Quién pagó qué?'), findsOneWidget);
+    await tester.tap(find.text('Saltar'));
+    await tester.pumpAndSettle();
+
+    // Vuelve a Configuración
+    expect(find.text('Modo de prueba'), findsOneWidget);
+
+    // Tocar Restablecer Onboarding
+    await tester.tap(find.byKey(const Key('settings-reset-onboarding-tile')));
+    await tester.pumpAndSettle();
+
+    expect(store.resetCalled, isTrue);
+    expect(
+      find.text(
+        'Onboarding restablecido. Se mostrará la próxima vez que abras la app.',
+      ),
+      findsOneWidget,
+    );
   });
 }

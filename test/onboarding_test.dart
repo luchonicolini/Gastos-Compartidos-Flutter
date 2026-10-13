@@ -12,6 +12,9 @@ class _MemoryStatusStore implements OnboardingStatusStore {
 
   @override
   Future<void> markComplete() async => completed = true;
+
+  @override
+  Future<void> reset() async => completed = false;
 }
 
 void main() {

@@ -8,6 +8,7 @@ import '../../../logic/balance_calculator.dart';
 import '../../../shared/group_visuals.dart';
 import 'create_group_screen.dart';
 import 'group_detail_screen.dart';
+import '../../onboarding/data/onboarding_status_store.dart';
 import '../../settings/presentation/settings_screen.dart';
 
 /// First destination after onboarding. It deliberately distinguishes a new
@@ -16,10 +17,12 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.repository,
+    this.onboardingStore,
     this.onOpenSettings,
   });
 
   final LocalGroupRepository repository;
+  final OnboardingStatusStore? onboardingStore;
   final VoidCallback? onOpenSettings;
 
   @override
@@ -54,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (_) => SettingsScreen(
           repository: widget.repository,
+          onboardingStore: widget.onboardingStore,
           onDataCleared: () {
             setState(() {
               _groups = widget.repository.getAll();

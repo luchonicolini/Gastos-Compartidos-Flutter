@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
@@ -573,15 +572,28 @@ class _EmptyMembersCard extends StatelessWidget {
         color: const Color(0xFFDDF1EF),
         borderRadius: BorderRadius.circular(28),
       ),
-      child: const Center(
+      child: Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _DashedOverlappingCircles(),
-              SizedBox(height: 24),
-              Text(
+              Container(
+                width: 64,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.group_add_outlined,
+                  color: Color(0xFF0D7E88),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
                 'Sumá a las personas que van a compartir gastos.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -599,107 +611,6 @@ class _EmptyMembersCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 3 círculos punteados superpuestos como en la Imagen 2
-class _DashedOverlappingCircles extends StatelessWidget {
-  const _DashedOverlappingCircles();
-
-  @override
-  Widget build(BuildContext context) {
-    const size = 64.0;
-    const overlap = 38.0;
-    return SizedBox(
-      width: size + overlap * 2,
-      height: size,
-      child: const Stack(
-        children: [
-          Positioned(
-            left: 0,
-            child: _DashedCircle(
-              size: size,
-              color: Color(0xFF0D7E88),
-              strokeWidth: 2.2,
-            ),
-          ),
-          Positioned(
-            left: overlap,
-            child: _DashedCircle(
-              size: size,
-              color: Color(0xFF586974),
-              strokeWidth: 2.2,
-            ),
-          ),
-          Positioned(
-            left: overlap * 2,
-            child: _DashedCircle(
-              size: size,
-              color: Color(0xFF586974),
-              strokeWidth: 2.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashedCircle extends StatelessWidget {
-  const _DashedCircle({
-    required this.size,
-    required this.color,
-    this.strokeWidth = 2.0,
-  });
-
-  final double size;
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _DashedCirclePainter(color: color, strokeWidth: strokeWidth),
-    );
-  }
-}
-
-class _DashedCirclePainter extends CustomPainter {
-  _DashedCirclePainter({required this.color, required this.strokeWidth});
-
-  final Color color;
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final radius = (size.width - strokeWidth) / 2;
-    final center = Offset(size.width / 2, size.height / 2);
-
-    const int dashCount = 14;
-    const double totalAngle = 2 * math.pi;
-    const double dashAngle = totalAngle / (dashCount * 2);
-
-    for (int i = 0; i < dashCount; i++) {
-      final startAngle = i * 2 * dashAngle;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        dashAngle,
-        false,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }
 
 /// Diálogo de confirmación para archivar miembro (Imagen 3)

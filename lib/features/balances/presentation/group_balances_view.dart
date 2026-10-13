@@ -126,17 +126,17 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
   }
 
   String _formatAmount(double value) {
-    if (value == value.roundToDouble()) {
-      final whole = value.toInt().toString();
-      final buffer = StringBuffer();
-      final len = whole.length;
-      for (var i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-        buffer.write(whole[i]);
-      }
-      return buffer.toString();
+    final isWhole = value == value.roundToDouble();
+    final parts = value.toStringAsFixed(2).split('.');
+    final whole = isWhole ? value.toInt().toString() : parts[0];
+    final buffer = StringBuffer();
+    final len = whole.length;
+    for (var i = 0; i < len; i++) {
+      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
+      buffer.write(whole[i]);
     }
-    return value.toStringAsFixed(2).replaceAll('.', ',');
+    if (isWhole) return buffer.toString();
+    return '${buffer.toString()},${parts[1]}';
   }
 
   @override
@@ -196,6 +196,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
             _TotalSpentHeroCard(
               totalSpentText: totalSpentText,
               subtitle: expensesSubtitle,
+              onTap: widget.onNavigateToExpenses,
             ),
             const SizedBox(height: 24),
 
@@ -394,54 +395,75 @@ class _TotalSpentHeroCard extends StatelessWidget {
   const _TotalSpentHeroCard({
     required this.totalSpentText,
     required this.subtitle,
+    this.onTap,
   });
 
   final String totalSpentText;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFDDF1EF),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Total gastado',
-            style: TextStyle(
-              fontFamily: 'Figtree',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF586974),
-            ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFDDF1EF),
+            borderRadius: BorderRadius.circular(24),
           ),
-          const SizedBox(height: 2),
-          Text(
-            totalSpentText,
-            style: const TextStyle(
-              fontFamily: 'Figtree',
-              fontSize: 38,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.0,
-              color: Color(0xFF11232D),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Total gastado',
+                style: TextStyle(
+                  fontFamily: 'Figtree',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF586974),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                totalSpentText,
+                style: const TextStyle(
+                  fontFamily: 'Figtree',
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1.0,
+                  color: Color(0xFF11232D),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF586974),
+                      ),
+                    ),
+                  ),
+                  if (onTap != null)
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: Color(0xFF0D7E88),
+                    ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontFamily: 'Figtree',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF586974),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

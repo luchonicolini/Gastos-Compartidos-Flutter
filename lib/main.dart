@@ -6,41 +6,91 @@ import 'data/repositories/local_group_repository.dart';
 import 'features/groups/presentation/home_screen.dart';
 import 'features/onboarding/data/onboarding_status_store.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
+import 'features/settings/data/app_settings_store.dart';
+import 'features/settings/presentation/app_settings_scope.dart';
 
 void main() {
   final database = AppDatabase();
   runApp(GastosCompartidosApp(database: database));
 }
 
-class GastosCompartidosApp extends StatelessWidget {
+class GastosCompartidosApp extends StatefulWidget {
   const GastosCompartidosApp({
     super.key,
     required this.database,
     this.onboardingStore,
+    this.settingsStore,
   });
 
   final AppDatabase database;
   final OnboardingStatusStore? onboardingStore;
+  final AppSettingsStore? settingsStore;
+
+  @override
+  State<GastosCompartidosApp> createState() => _GastosCompartidosAppState();
+}
+
+class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
+  late final AppSettingsStore _settingsStore =
+      widget.settingsStore ?? LocalAppSettingsStore();
+  bool _reduceMotion = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final enabled = await _settingsStore.isReduceMotionEnabled();
+    if (mounted && enabled != _reduceMotion) {
+      setState(() => _reduceMotion = enabled);
+    }
+  }
+
+  Future<void> _setReduceMotion(bool enabled) async {
+    setState(() => _reduceMotion = enabled);
+    await _settingsStore.setReduceMotionEnabled(enabled);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Gastos Compartidos',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      home: _OnboardingGate(
-        store: onboardingStore ?? LocalOnboardingStatusStore(),
-        repository: LocalGroupRepository(database),
+    return AppSettingsScope(
+      reduceMotion: _reduceMotion,
+      setReduceMotion: _setReduceMotion,
+      child: MaterialApp(
+        title: 'Gastos Compartidos',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        builder: (context, child) {
+          final mediaQuery = MediaQuery.of(context);
+          return MediaQuery(
+            data: mediaQuery.copyWith(
+              disableAnimations: _reduceMotion || mediaQuery.disableAnimations,
+            ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        home: _OnboardingGate(
+          store: widget.onboardingStore ?? LocalOnboardingStatusStore(),
+          settingsStore: _settingsStore,
+          repository: LocalGroupRepository(widget.database),
+        ),
       ),
     );
   }
 }
 
 class _OnboardingGate extends StatefulWidget {
-  const _OnboardingGate({required this.store, required this.repository});
+  const _OnboardingGate({
+    required this.store,
+    required this.settingsStore,
+    required this.repository,
+  });
 
   final OnboardingStatusStore store;
+  final AppSettingsStore settingsStore;
   final LocalGroupRepository repository;
 
   @override
@@ -67,7 +117,11 @@ class _OnboardingGateState extends State<_OnboardingGate> {
           );
         }
         if (_finishedThisSession || snapshot.data == true) {
-          return HomeScreen(repository: widget.repository);
+          return HomeScreen(
+            repository: widget.repository,
+            onboardingStore: widget.store,
+            settingsStore: widget.settingsStore,
+          );
         }
         return OnboardingScreen(onFinish: _finish);
       },

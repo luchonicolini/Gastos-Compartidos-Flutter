@@ -442,7 +442,20 @@ class _EmptyMembers extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const _DottedAvatars(),
+              Container(
+                width: 64,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.group_add_outlined,
+                  color: Color(0xFF0D7E88),
+                  size: 32,
+                ),
+              ),
               const SizedBox(height: 20),
               Text(
                 'Agregate primero y después sumá al resto.',
@@ -598,42 +611,6 @@ class _MemberRow extends StatelessWidget {
             tooltip: 'Quitar ${member.name}',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DottedAvatars extends StatelessWidget {
-  const _DottedAvatars();
-  @override
-  Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 142,
-      height: 58,
-      child: Stack(
-        children: [
-          Positioned(left: 0, child: _Dot(color: c.primary)),
-          const Positioned(left: 42, child: _Dot()),
-          const Positioned(left: 84, child: _Dot()),
-        ],
-      ),
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({this.color});
-  final Color? color;
-  @override
-  Widget build(BuildContext context) {
-    final stroke = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
-    return Container(
-      width: 58,
-      height: 58,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: stroke, width: 2, style: BorderStyle.solid),
       ),
     );
   }
