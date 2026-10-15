@@ -114,15 +114,21 @@ class BalanceCalculator {
     required Expense expense,
     required List<Person> participants,
   }) {
+    final details = expense.splitDetails;
+
+    if (expense.splitType != SplitType.equally && details == null) {
+      return _calculateEqualSharesInCents(expense, participants);
+    }
+
     switch (expense.splitType) {
       case SplitType.equally:
         return _calculateEqualSharesInCents(expense, participants);
       case SplitType.byAmount:
-        return _calculateAmountSharesInCents(expense, participants);
+        return _calculateAmountSharesInCents(expense, participants, details!);
       case SplitType.byPercentage:
-        return _calculatePercentageSharesInCents(expense, participants);
+        return _calculatePercentageSharesInCents(expense, participants, details!);
       case SplitType.byShares:
-        return _calculateProportionalSharesInCents(expense, participants);
+        return _calculateProportionalSharesInCents(expense, participants, details!);
     }
   }
 
@@ -150,12 +156,8 @@ class BalanceCalculator {
   static Map<String, int> _calculateAmountSharesInCents(
     Expense expense,
     List<Person> participants,
+    Map<String, double> details,
   ) {
-    final details = expense.splitDetails;
-    if (details == null) {
-      return _calculateEqualSharesInCents(expense, participants);
-    }
-
     final sharesToDebit = <String, int>{};
     for (final p in participants) {
       final specificAmount = Money.fromDecimal(
@@ -171,12 +173,8 @@ class BalanceCalculator {
   static Map<String, int> _calculatePercentageSharesInCents(
     Expense expense,
     List<Person> participants,
+    Map<String, double> details,
   ) {
-    final details = expense.splitDetails;
-    if (details == null) {
-      return _calculateEqualSharesInCents(expense, participants);
-    }
-
     final sharesToDebit = <String, int>{};
     final expenseAmountCents = expense.convertedAmount.cents;
     var calculatedSum = 0;
@@ -200,12 +198,8 @@ class BalanceCalculator {
   static Map<String, int> _calculateProportionalSharesInCents(
     Expense expense,
     List<Person> participants,
+    Map<String, double> details,
   ) {
-    final details = expense.splitDetails;
-    if (details == null) {
-      return _calculateEqualSharesInCents(expense, participants);
-    }
-
     double totalShares = 0.0;
     for (final p in participants) {
       totalShares += details[p.id] ?? 0.0;
