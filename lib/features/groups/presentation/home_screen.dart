@@ -6,6 +6,7 @@ import '../../../domain/models/group.dart';
 import '../../../domain/models/member_balance.dart';
 import '../../../logic/balance_calculator.dart';
 import '../../../shared/group_visuals.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'create_group_screen.dart';
 import 'group_detail_screen.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
@@ -516,31 +517,6 @@ class _GroupsListView extends StatelessWidget {
   final VoidCallback? onOpenSettings;
   final VoidCallback onRefresh;
 
-  String _formatAmount(double value) {
-    final isWhole = value == value.roundToDouble();
-    if (isWhole) {
-      final whole = value.toInt().toString();
-      final buffer = StringBuffer();
-      final len = whole.length;
-      for (var i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-        buffer.write(whole[i]);
-      }
-      return buffer.toString();
-    }
-    final fixed = value.toStringAsFixed(2);
-    final parts = fixed.split('.');
-    final whole = parts[0];
-    final decimals = parts[1];
-    final buffer = StringBuffer();
-    final len = whole.length;
-    for (var i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-      buffer.write(whole[i]);
-    }
-    return '${buffer.toString()},$decimals';
-  }
-
   MemberBalance? _getUserBalance(Group group) {
     if (group.members.isEmpty) return null;
     final balances = BalanceCalculator.calculateMemberBalances(group);
@@ -926,7 +902,7 @@ class _GroupsListView extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '${currency.symbol} ${_formatAmount(balance)}',
+            '${currency.symbol} ${CurrencyFormatter.formatAmount(balance)}',
             style: const TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w800,
@@ -953,7 +929,7 @@ class _GroupsListView extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '${currency.symbol} ${_formatAmount(balance.abs())}',
+            '${currency.symbol} ${CurrencyFormatter.formatAmount(balance.abs())}',
             style: const TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w800,

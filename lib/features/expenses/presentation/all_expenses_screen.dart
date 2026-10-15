@@ -7,6 +7,7 @@ import '../../../domain/models/expense.dart';
 import '../../../domain/models/group.dart';
 import '../../groups/application/group_operations.dart';
 import '../../groups/presentation/group_detail_screen.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import 'create_expense_screen.dart';
 
 /// Pantalla completa de Todos los gastos del grupo.
@@ -299,25 +300,6 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
-  String _formatAmount(double value) {
-    final isNegative = value < 0;
-    final absVal = value.abs();
-    final whole = absVal.truncate().toString();
-    final buffer = StringBuffer();
-    final len = whole.length;
-    for (var i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-      buffer.write(whole[i]);
-    }
-    final formattedWhole = buffer.toString();
-    if (absVal == absVal.truncateToDouble()) {
-      return '${isNegative ? '-' : ''}$formattedWhole';
-    }
-    final decimal =
-        (absVal - absVal.truncate()).toStringAsFixed(2).substring(2);
-    return '${isNegative ? '-' : ''}$formattedWhole,$decimal';
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasExpenses = widget.group.expenses.isNotEmpty;
@@ -428,7 +410,7 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
   Widget _buildExpensesList(BuildContext context) {
     final currencySymbol = widget.group.referenceCurrency.symbol;
     final totalSpentText =
-        '$currencySymbol${_formatAmount(_totalExpensesAmount)}';
+        '$currencySymbol${CurrencyFormatter.formatAmount(_totalExpensesAmount)}';
     final expensesCount = widget.group.expenses.length;
     final countText =
         '$expensesCount ${expensesCount == 1 ? "gasto" : "gastos"}';
@@ -666,7 +648,7 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  '$currencySymbol${_formatAmount(expense.amount)}',
+                                  '$currencySymbol${CurrencyFormatter.formatAmount(expense.amount)}',
                                   style: const TextStyle(
                                     fontFamily: 'Figtree',
                                     fontWeight: FontWeight.w800,
@@ -677,7 +659,7 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
                                 if (isMultiCurrency) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${expense.originalCurrency.symbol} ${_formatAmount(expense.originalAmount.decimalValue)} · ${expense.originalCurrency.code}',
+                                    '${expense.originalCurrency.symbol} ${CurrencyFormatter.formatAmount(expense.originalAmount.decimalValue)} · ${expense.originalCurrency.code}',
                                     style: const TextStyle(
                                       fontFamily: 'Figtree',
                                       fontSize: 13,

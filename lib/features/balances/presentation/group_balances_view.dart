@@ -10,6 +10,7 @@ import '../../../domain/models/settlement_payment.dart';
 import '../../../logic/balance_calculator.dart';
 import '../../../logic/settlement_calculator.dart';
 import '../../groups/application/group_operations.dart';
+import '../../../shared/utils/currency_formatter.dart';
 
 /// Vista de "Cuentas" del grupo.
 /// Implementada con máxima fidelidad visual respecto a las pantallas de referencia.
@@ -81,7 +82,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
         settlement: settlement,
         allMembers: widget.group.members,
         currencySymbol: widget.group.referenceCurrency.symbol,
-        formatAmount: _formatAmount,
+        formatAmount: CurrencyFormatter.formatAmount,
       ),
     );
 
@@ -102,7 +103,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
       builder: (context) => AlertDialog(
         title: const Text('Eliminar pago'),
         content: Text(
-          '¿Querés anular el pago de ${payment.payerName} a ${payment.payeeName} por \$${_formatAmount(payment.amount)}?',
+          '¿Querés anular el pago de ${payment.payerName} a ${payment.payeeName} por \$${CurrencyFormatter.formatAmount(payment.amount)}?',
         ),
         actions: [
           TextButton(
@@ -125,20 +126,6 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
     }
   }
 
-  String _formatAmount(double value) {
-    final isWhole = value == value.roundToDouble();
-    final parts = value.toStringAsFixed(2).split('.');
-    final whole = isWhole ? value.toInt().toString() : parts[0];
-    final buffer = StringBuffer();
-    final len = whole.length;
-    for (var i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-      buffer.write(whole[i]);
-    }
-    if (isWhole) return buffer.toString();
-    return '${buffer.toString()},${parts[1]}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasExpenses = widget.group.expenses.isNotEmpty;
@@ -146,7 +133,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
     final suggested = _suggestedSettlements;
     final currencySymbol = widget.group.referenceCurrency.symbol;
     final totalSpentText =
-        '$currencySymbol${_formatAmount(_totalExpensesAmount)}';
+        '$currencySymbol${CurrencyFormatter.formatAmount(_totalExpensesAmount)}';
     final expensesCount = widget.group.expenses.length;
     final activeMembersCount = _activeMembers.length;
     final expensesSubtitle =
@@ -218,7 +205,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
               balances: balances,
               allMembers: widget.group.members,
               currencySymbol: currencySymbol,
-              formatAmount: _formatAmount,
+              formatAmount: CurrencyFormatter.formatAmount,
             ),
             const SizedBox(height: 24),
 
@@ -250,7 +237,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
                   settlement: item,
                   allMembers: widget.group.members,
                   currencySymbol: currencySymbol,
-                  formatAmount: _formatAmount,
+                  formatAmount: CurrencyFormatter.formatAmount,
                   onConfirm: () => _openConfirmPaymentModal(item),
                 ),
                 const SizedBox(height: 12),
@@ -278,7 +265,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
                 _ConfirmedPaymentCard(
                   payment: payment,
                   currencySymbol: currencySymbol,
-                  formatAmount: _formatAmount,
+                  formatAmount: CurrencyFormatter.formatAmount,
                   onDelete: () => _deleteSettlement(payment),
                 ),
                 const SizedBox(height: 10),
