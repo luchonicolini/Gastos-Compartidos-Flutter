@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'core/theme/app_theme.dart';
 import 'data/database/app_database.dart';
@@ -8,8 +9,11 @@ import 'features/onboarding/data/onboarding_status_store.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
 import 'features/settings/data/app_settings_store.dart';
 import 'features/settings/presentation/app_settings_scope.dart';
+import 'features/splash/presentation/splash_screen.dart';
 
 void main() {
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   final database = AppDatabase();
   runApp(GastosCompartidosApp(database: database));
 }
@@ -112,10 +116,13 @@ class _OnboardingGateState extends State<_OnboardingGate> {
       future: _completion,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const SplashScreenView();
         }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            FlutterNativeSplash.remove();
+          } catch (_) {}
+        });
         if (_finishedThisSession || snapshot.data == true) {
           return HomeScreen(
             repository: widget.repository,

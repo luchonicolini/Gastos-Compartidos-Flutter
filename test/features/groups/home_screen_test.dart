@@ -315,4 +315,44 @@ void main() {
 
     expect(find.text('Mis grupos'), findsOneWidget);
   });
+
+  testWidgets(
+      'deslizar grupo a la izquierda revela botón Eliminar y permite eliminar con confirmación',
+      (tester) async {
+    setTestSize(tester);
+
+    final group = Group(name: 'Grupo Para Borrar');
+    await repository.save(group);
+
+    await tester.pumpWidget(buildScreen());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Grupo Para Borrar'), findsOneWidget);
+
+    // Deslizar la tarjeta del grupo a la izquierda
+    await tester.drag(
+      find.byKey(Key('group-card-${group.id}')),
+      const Offset(-300, 0),
+    );
+    await tester.pumpAndSettle();
+
+    // Acciones reveladas
+    expect(find.byKey(Key('slidable-delete-group-${group.id}')), findsOneWidget);
+    expect(find.byKey(Key('slidable-edit-group-${group.id}')), findsOneWidget);
+
+    // Tocar Eliminar
+    await tester.tap(find.byKey(Key('slidable-delete-group-${group.id}')));
+    await tester.pumpAndSettle();
+
+    // Se muestra el bottom sheet de confirmación
+    expect(find.text('¿Eliminar Grupo Para Borrar?'), findsOneWidget);
+    expect(find.byKey(const Key('confirm-delete-group-button')), findsOneWidget);
+
+    // Confirmar eliminación
+    await tester.tap(find.byKey(const Key('confirm-delete-group-button')));
+    await tester.pumpAndSettle();
+
+    // El grupo ya no está
+    expect(find.text('Grupo Para Borrar'), findsNothing);
+  });
 }

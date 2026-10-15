@@ -42,6 +42,7 @@ dependencies:
   flutter_slidable: ^4.0.3
   smooth_page_indicator: ^1.2.1
   animate_do: ^5.1.0
+  flutter_native_splash: ^2.4.8
 
 dev_dependencies:
   flutter_test:
@@ -80,10 +81,19 @@ flutter:
         - asset: assets/fonts/Figtree-Variable.ttf
           weight: 800
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/branding/
+
+flutter_native_splash:
+  color: "#F8FAFC"
+  color_dark: "#11232D"
+  image: assets/branding/splash_icon_light.png
+  image_dark: assets/branding/splash_icon_dark.png
+  android_12:
+    color: "#F8FAFC"
+    color_dark: "#11232D"
+    image: assets/branding/splash_icon_android12.png
+    image_dark: assets/branding/splash_icon_android12.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

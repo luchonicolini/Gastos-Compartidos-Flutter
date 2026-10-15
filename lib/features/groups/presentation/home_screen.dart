@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/currency.dart';
@@ -7,7 +8,9 @@ import '../../../domain/models/member_balance.dart';
 import '../../../logic/balance_calculator.dart';
 import '../../../shared/group_visuals.dart';
 import '../../../shared/utils/currency_formatter.dart';
+import '../application/group_operations.dart';
 import 'create_group_screen.dart';
+import 'edit_group_screen.dart';
 import 'group_detail_screen.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
 import '../../settings/data/app_settings_store.dart';
@@ -776,6 +779,164 @@ class _GroupsListView extends StatelessWidget {
     );
   }
 
+  void _confirmDeleteGroup(BuildContext context, Group group) {
+    final expensesCount = group.expenses.length;
+    final membersCount = group.members.length;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (bottomSheetContext) {
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          clipBehavior: Clip.antiAlias,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFDEEE9),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFC2410C),
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '¿Eliminar ${group.name}?',
+                    style: const TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF11232D),
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Se eliminarán permanentemente $expensesCount ${expensesCount == 1 ? "gasto" : "gastos"}, $membersCount ${membersCount == 1 ? "persona" : "personas"} y los balances registrados.',
+                    style: const TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      height: 1.35,
+                      color: Color(0xFF586974),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDF0EA),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xFFC2410C),
+                          size: 22,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Esta acción no se puede deshacer.',
+                            style: TextStyle(
+                              fontFamily: 'Figtree',
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF8B2500),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton(
+                      key: const Key('confirm-delete-group-button'),
+                      onPressed: () async {
+                        Navigator.of(bottomSheetContext).pop();
+                        if (repository != null) {
+                          await GroupOperations(repository!).deleteGroup(group);
+                          onRefresh();
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFC2410C),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Eliminar grupo',
+                        style: TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(bottomSheetContext).pop(),
+                      child: const Text(
+                        'Cancelar',
+                        style: TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF586974),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildGroupCard(BuildContext context, Group group) {
     final color = groupColorFromHex(group.colorHex);
     final icon = groupIconFromName(group.iconName);
@@ -783,17 +944,21 @@ class _GroupsListView extends StatelessWidget {
     final expensesCount = group.expenses.length;
     final userBalance = _getUserBalance(group);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: Key('group-card-${group.id}'),
-        borderRadius: BorderRadius.circular(22),
-        onTap: repository == null
-            ? null
-            : () async {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Slidable(
+        key: ValueKey('slidable-group-${group.id}'),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          extentRatio: 0.48,
+          children: [
+            SlidableAction(
+              key: Key('slidable-edit-group-${group.id}'),
+              onPressed: (_) async {
+                if (repository == null) return;
                 final changed = await Navigator.of(context).push<bool>(
                   MaterialPageRoute(
-                    builder: (_) => GroupDetailScreen(
+                    builder: (_) => EditGroupScreen(
                       group: group,
                       repository: repository!,
                     ),
@@ -801,8 +966,22 @@ class _GroupsListView extends StatelessWidget {
                 );
                 if (changed == true) onRefresh();
               },
+              backgroundColor: const Color(0xFF0D7E88),
+              foregroundColor: Colors.white,
+              icon: Icons.edit_outlined,
+              label: 'Editar',
+            ),
+            SlidableAction(
+              key: Key('slidable-delete-group-${group.id}'),
+              onPressed: (_) => _confirmDeleteGroup(context, group),
+              backgroundColor: const Color(0xFFE53935),
+              foregroundColor: Colors.white,
+              icon: Icons.delete_outline_rounded,
+              label: 'Eliminar',
+            ),
+          ],
+        ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
@@ -814,70 +993,93 @@ class _GroupsListView extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            children: [
-              // Circular Group Icon Badge
-              Container(
-                width: 52,
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Group name & count info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: Key('group-card-${group.id}'),
+              borderRadius: BorderRadius.circular(22),
+              onTap: repository == null
+                  ? null
+                  : () async {
+                      final changed = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(
+                          builder: (_) => GroupDetailScreen(
+                            group: group,
+                            repository: repository!,
+                          ),
+                        ),
+                      );
+                      if (changed == true) onRefresh();
+                    },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                child: Row(
                   children: [
-                    Text(
-                      group.name,
-                      style: const TextStyle(
-                        fontFamily: 'Figtree',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        letterSpacing: -0.3,
-                        color: Color(0xFF11232D),
+                    // Circular Group Icon Badge
+                    Container(
+                      width: 52,
+                      height: 52,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '$activeMembersCount ${activeMembersCount == 1 ? "persona" : "personas"} · $expensesCount ${expensesCount == 1 ? "gasto" : "gastos"}',
-                      style: const TextStyle(
-                        fontFamily: 'Figtree',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Color(0xFF586974),
+                    const SizedBox(width: 14),
+
+                    // Group name & count info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            group.name,
+                            style: const TextStyle(
+                              fontFamily: 'Figtree',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              letterSpacing: -0.3,
+                              color: Color(0xFF11232D),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '$activeMembersCount ${activeMembersCount == 1 ? "persona" : "personas"} · $expensesCount ${expensesCount == 1 ? "gasto" : "gastos"}',
+                            style: const TextStyle(
+                              fontFamily: 'Figtree',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: Color(0xFF586974),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Status badge (Te deben / Debés / Todo al día)
+                    _buildBalanceStatus(userBalance, group.referenceCurrency),
+
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF8E9CA3),
+                      size: 22,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-
-              // Status badge (Te deben / Debés / Todo al día)
-              _buildBalanceStatus(userBalance, group.referenceCurrency),
-
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFF8E9CA3),
-                size: 22,
-              ),
-            ],
+            ),
           ),
         ),
       ),
