@@ -174,3 +174,35 @@ Si un cambio modifica una regla de negocio, actualizá primero `SPEC.md` y sus t
 ## Autor
 
 **Luciano Nicolini** — [@luchonicolini](https://github.com/luchonicolini)
+
+## Análisis de Arquitectura y Gestión del Estado (Update)
+
+### Arquitectura Actual
+El proyecto sigue una arquitectura limpia (Clean Architecture) orientada a funcionalidades (Feature-Driven), separando responsabilidades en distintas capas:
+- **Domain (`lib/domain`)**: Entidades de negocio puras (Group, Person, Expense, Money) independientes de cualquier framework.
+- **Data (`lib/data`)**: Implementación de persistencia local utilizando `drift` (SQLite). Los repositorios (ej. `LocalGroupRepository`) abstraen las operaciones de la base de datos de la interfaz de usuario.
+- **Logic (`lib/logic`)**: Contiene las reglas de negocio, validadores y calculadoras puras (ej. `BalanceCalculator`), facilitando las pruebas unitarias.
+- **Features (`lib/features`)**: Contiene la interfaz de usuario y la lógica de presentación agrupada por contexto (onboarding, groups, members, expenses, balances, settings).
+- **Shared/Core**: Utilidades, componentes visuales genéricos y configuraciones compartidas.
+
+### Gestión del Estado (State Management)
+La aplicación actualmente confía en mecanismos nativos de Flutter para la gestión del estado:
+- **`setState` y `StatefulWidget`**: Utilizado ampliamente en las pantallas (ej. `GroupDetailScreen`, `CreateExpenseScreen`) para actualizar la UI en base a la interacción del usuario y respuestas de repositorios.
+- **Prop Drilling y Callbacks**: El estado de los grupos y miembros se pasa hacia los hijos como propiedades, y las actualizaciones fluyen hacia arriba a través de callbacks (ej. `onGroupChanged: (updated) => setState(() => _group = updated)`).
+- **InheritedWidget**: Utilizado en utilidades globales específicas como el tema y configuraciones (`AppSettingsScope`).
+
+Esta aproximación funciona bien para una versión inicial local, pero a medida que el árbol de widgets y la complejidad de los datos crezcan, el anidamiento y la perforación de propiedades (prop drilling) podrían volverse difíciles de mantener.
+
+## 3 Mejoras y Funcionalidades Faltantes Propuestas
+
+### 1. Adopción de una Solución Global de Gestión de Estado (ej. Riverpod o Bloc)
+**Problema:** Depender puramente de `setState` y callbacks genera un acoplamiento fuerte entre la vista y la lógica de persistencia, además de obligar a pasar callbacks por múltiples niveles del árbol de widgets.
+**Solución propuesta:** Integrar **Riverpod** o **Bloc** para gestionar el estado de manera reactiva y global. Esto permitirá que los widgets se suscriban directamente a los cambios de estado del repositorio sin depender de un flujo manual de eventos, separando completamente la lógica de presentación de los servicios de datos.
+
+### 2. Sincronización en la Nube y Trabajo Colaborativo (Backend)
+**Problema:** Gastos Compartidos es actualmente "local-first" y sin conexión. Al ser una aplicación diseñada para grupos de viaje, la mayor limitación es que todos los datos residen en un solo dispositivo, por lo que los participantes no pueden ver sus balances de forma independiente.
+**Solución propuesta:** Implementar una capa de sincronización (por ejemplo, con **Supabase** o **Firebase**). Gracias a que la persistencia está aislada detrás de contratos de repositorios, se puede introducir un `RemoteGroupRepository` y estrategias de sincronización local/remota (Offline-first approach) para permitir que varios usuarios colaboren en el mismo grupo de viaje.
+
+### 3. Internacionalización (i18n)
+**Problema:** La aplicación está desarrollada enteramente con cadenas de texto en español hardcodeadas en los archivos de la interfaz y la lógica de negocio.
+**Solución propuesta:** Aunque ya se incluye el paquete `intl` en las dependencias para formateo de números, se debe implementar una verdadera **internacionalización (i18n)** utilizando archivos `.arb`. Esto preparará la aplicación para soportar múltiples idiomas (ej. Inglés, Portugués, considerando la popularidad del real brasileño `BRL` en el modelo), lo cual es crucial para una aplicación de viajes orientada a un público internacional.
