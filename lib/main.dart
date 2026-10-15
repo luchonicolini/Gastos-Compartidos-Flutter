@@ -72,6 +72,10 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
           return MediaQuery(
             data: mediaQuery.copyWith(
               disableAnimations: _reduceMotion || mediaQuery.disableAnimations,
+              textScaler: mediaQuery.textScaler.clamp(
+                minScaleFactor: 0.85,
+                maxScaleFactor: 1.35,
+              ),
             ),
             child: child ?? const SizedBox.shrink(),
           );

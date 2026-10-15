@@ -1043,11 +1043,12 @@ class _GroupsListView extends StatelessWidget {
                             style: const TextStyle(
                               fontFamily: 'Figtree',
                               fontWeight: FontWeight.w800,
-                              fontSize: 18,
+                              fontSize: 17,
                               letterSpacing: -0.3,
                               color: Color(0xFF11232D),
+                              height: 1.2,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 3),
@@ -1056,7 +1057,7 @@ class _GroupsListView extends StatelessWidget {
                             style: const TextStyle(
                               fontFamily: 'Figtree',
                               fontWeight: FontWeight.w500,
-                              fontSize: 14,
+                              fontSize: 13.5,
                               color: Color(0xFF586974),
                             ),
                             maxLines: 1,
@@ -1068,13 +1069,16 @@ class _GroupsListView extends StatelessWidget {
                     const SizedBox(width: 10),
 
                     // Status badge (Te deben / Debés / Todo al día)
-                    _buildBalanceStatus(userBalance, group.referenceCurrency),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 135),
+                      child: _buildBalanceStatus(userBalance, group.referenceCurrency),
+                    ),
 
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     const Icon(
                       Icons.chevron_right_rounded,
                       color: Color(0xFF8E9CA3),
-                      size: 22,
+                      size: 20,
                     ),
                   ],
                 ),
@@ -1098,19 +1102,23 @@ class _GroupsListView extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w700,
-              fontSize: 13,
+              fontSize: 12.5,
               color: Color(0xFF0D7E88),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            '${currency.symbol} ${CurrencyFormatter.formatAmount(balance)}',
-            style: const TextStyle(
-              fontFamily: 'Figtree',
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              letterSpacing: -0.4,
-              color: Color(0xFF0D7E88),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${currency.symbol} ${CurrencyFormatter.formatAmount(balance)}',
+              style: const TextStyle(
+                fontFamily: 'Figtree',
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                letterSpacing: -0.4,
+                color: Color(0xFF0D7E88),
+              ),
             ),
           ),
         ],
@@ -1125,31 +1133,39 @@ class _GroupsListView extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w700,
-              fontSize: 13,
+              fontSize: 12.5,
               color: Color(0xFFC6500A),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            '${currency.symbol} ${CurrencyFormatter.formatAmount(balance.abs())}',
-            style: const TextStyle(
-              fontFamily: 'Figtree',
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              letterSpacing: -0.4,
-              color: Color(0xFFC6500A),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${currency.symbol} ${CurrencyFormatter.formatAmount(balance.abs())}',
+              style: const TextStyle(
+                fontFamily: 'Figtree',
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                letterSpacing: -0.4,
+                color: Color(0xFFC6500A),
+              ),
             ),
           ),
         ],
       );
     } else {
-      return const Text(
-        'Todo al día',
-        style: TextStyle(
-          fontFamily: 'Figtree',
-          fontWeight: FontWeight.w700,
-          fontSize: 15,
-          color: Color(0xFF586974),
+      return const FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerRight,
+        child: Text(
+          'Todo al día',
+          style: TextStyle(
+            fontFamily: 'Figtree',
+            fontWeight: FontWeight.w700,
+            fontSize: 14.5,
+            color: Color(0xFF586974),
+          ),
         ),
       );
     }

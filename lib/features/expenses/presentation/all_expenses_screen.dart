@@ -624,51 +624,67 @@ class _GroupExpensesViewState extends State<GroupExpensesView> {
                                     style: const TextStyle(
                                       fontFamily: 'Figtree',
                                       fontWeight: FontWeight.w800,
-                                      fontSize: 17,
+                                      fontSize: 16.5,
                                       color: Color(0xFF11232D),
+                                      height: 1.2,
                                     ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     participantsSubtitle,
                                     style: const TextStyle(
                                       fontFamily: 'Figtree',
-                                      fontSize: 14,
+                                      fontSize: 13.5,
                                       fontWeight: FontWeight.w500,
                                       color: Color(0xFF586974),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
 
                             // Monto en moneda de referencia (y moneda original si aplica)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '$currencySymbol${CurrencyFormatter.formatAmount(expense.amount)}',
-                                  style: const TextStyle(
-                                    fontFamily: 'Figtree',
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 18,
-                                    color: Color(0xFF11232D),
-                                  ),
-                                ),
-                                if (isMultiCurrency) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${expense.originalCurrency.symbol} ${CurrencyFormatter.formatAmount(expense.originalAmount.decimalValue)} · ${expense.originalCurrency.code}',
-                                    style: const TextStyle(
-                                      fontFamily: 'Figtree',
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF586974),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 135),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      '$currencySymbol${CurrencyFormatter.formatAmount(expense.amount)}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Figtree',
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 17.5,
+                                        color: Color(0xFF11232D),
+                                      ),
                                     ),
                                   ),
+                                  if (isMultiCurrency) ...[
+                                    const SizedBox(height: 2),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${expense.originalCurrency.symbol} ${CurrencyFormatter.formatAmount(expense.originalAmount.decimalValue)} · ${expense.originalCurrency.code}',
+                                        style: const TextStyle(
+                                          fontFamily: 'Figtree',
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF586974),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ],
                         ),

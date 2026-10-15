@@ -622,13 +622,20 @@ class _MemberBalanceRow extends StatelessWidget {
           const SizedBox(width: 10),
 
           // Estado del balance
-          Text(
-            statusText,
-            style: TextStyle(
-              fontFamily: 'Figtree',
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
-              color: statusColor,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                statusText,
+                style: TextStyle(
+                  fontFamily: 'Figtree',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  color: statusColor,
+                ),
+              ),
             ),
           ),
         ],
@@ -745,22 +752,32 @@ class _SuggestedPaymentCard extends StatelessWidget {
                     '${settlement.payerName} paga a ${settlement.payeeName}',
                     style: const TextStyle(
                       fontFamily: 'Figtree',
-                      fontSize: 16,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF11232D),
+                      height: 1.2,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 10),
 
                 // Importe
-                Text(
-                  '$currencySymbol${formatAmount(settlement.amount)}',
-                  style: const TextStyle(
-                    fontFamily: 'Figtree',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF11232D),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 130),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$currencySymbol${formatAmount(settlement.amount)}',
+                      style: const TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 17.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF11232D),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -913,18 +930,26 @@ class _ConfirmedPaymentCard extends StatelessWidget {
                   '${payment.payerName} pagó a ${payment.payeeName}',
                   style: const TextStyle(
                     fontFamily: 'Figtree',
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF11232D),
+                    height: 1.2,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  '$currencySymbol${formatAmount(payment.amount)}',
-                  style: const TextStyle(
-                    fontFamily: 'Figtree',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0D7E88),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$currencySymbol${formatAmount(payment.amount)}',
+                    style: const TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0D7E88),
+                    ),
                   ),
                 ),
               ],
