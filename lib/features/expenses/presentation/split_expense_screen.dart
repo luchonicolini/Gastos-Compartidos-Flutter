@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/models/currency.dart';
 import '../../../domain/models/person.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../../domain/models/split_type.dart';
 
 /// Resultado devuelto por [SplitExpenseScreen] al confirmar.
@@ -154,21 +155,9 @@ class _SplitExpenseScreenState extends State<SplitExpenseScreen> {
   // Formateo y utilidades matemáticas
   // -------------------------------------------------------------
 
-  static String _formatWithDots(String digits) {
-    final buffer = StringBuffer();
-    final len = digits.length;
-    for (var i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
-  }
-
   String _formatCurrency(double val, {bool spaced = false}) {
     final integerPart = val.round().abs();
-    final dots = _formatWithDots(integerPart.toString());
+    final dots = CurrencyFormatter.formatWithDots(integerPart.toString());
     final sym = widget.currency.symbol;
     return spaced ? '$sym $dots' : '$sym$dots';
   }
@@ -333,7 +322,7 @@ class _SplitExpenseScreenState extends State<SplitExpenseScreen> {
   }) async {
     final initialText = initialValue > 0 ? initialValue.round().toString() : '';
     final controller = TextEditingController(
-      text: initialText.isNotEmpty ? _formatWithDots(initialText) : '',
+      text: initialText.isNotEmpty ? CurrencyFormatter.formatWithDots(initialText) : '',
     );
 
     return showModalBottomSheet<double>(
@@ -419,7 +408,7 @@ class _SplitExpenseScreenState extends State<SplitExpenseScreen> {
                           onChanged: (val) {
                             final clean = val.replaceAll('.', '');
                             if (clean.isEmpty) return;
-                            final formatted = _formatWithDots(clean);
+                            final formatted = CurrencyFormatter.formatWithDots(clean);
                             if (formatted != val) {
                               controller.value = TextEditingValue(
                                 text: formatted,

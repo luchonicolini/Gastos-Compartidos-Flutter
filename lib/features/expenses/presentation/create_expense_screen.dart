@@ -11,6 +11,7 @@ import '../../../domain/models/person.dart';
 import '../../../domain/models/split_type.dart';
 import '../../../logic/expense_validator.dart';
 import '../../../shared/group_visuals.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../groups/application/group_operations.dart';
 import 'split_expense_screen.dart';
 
@@ -161,7 +162,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
 
   String _formatInitialAmount(double value) {
     if (value == value.roundToDouble()) {
-      return _formatNumberWithDots(value.toInt().toString());
+      return CurrencyFormatter.formatWithDots(value.toInt().toString());
     }
     return value.toStringAsFixed(2).replaceAll('.', ',');
   }
@@ -240,7 +241,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
     }
 
     if (RegExp(r'^\d+$').hasMatch(clean)) {
-      final formatted = _formatNumberWithDots(clean);
+      final formatted = CurrencyFormatter.formatWithDots(clean);
       if (formatted != value) {
         _amountController.value = TextEditingValue(
           text: formatted,
@@ -249,18 +250,6 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
       }
     }
     setState(() {});
-  }
-
-  static String _formatNumberWithDots(String digits) {
-    final buffer = StringBuffer();
-    final len = digits.length;
-    for (var i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
   }
 
   void _togglePayer(Person person) {
@@ -290,14 +279,14 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
   String _formatAmountDecimal(double val) {
     final integerPart = val.truncate();
     final decimalPart = ((val - integerPart).abs() * 100).round();
-    final intFormatted = _formatNumberWithDots(integerPart.toString());
+    final intFormatted = CurrencyFormatter.formatWithDots(integerPart.toString());
     final decFormatted = decimalPart.toString().padLeft(2, '0');
     return '$intFormatted,$decFormatted';
   }
 
   String _formatRate(double rate) {
     if (rate % 1 == 0) {
-      return _formatNumberWithDots(rate.toInt().toString());
+      return CurrencyFormatter.formatWithDots(rate.toInt().toString());
     }
     return rate.toStringAsFixed(2).replaceAll('.', ',');
   }
@@ -920,7 +909,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '≈ ${refCurrency.symbol} ${_formatNumberWithDots(convertedAmount.round().toString())}',
+                    '≈ ${refCurrency.symbol} ${CurrencyFormatter.formatWithDots(convertedAmount.round().toString())}',
                     style: const TextStyle(
                       fontFamily: 'Figtree',
                       fontSize: 16,
@@ -1894,8 +1883,8 @@ class _LiveSummaryCard extends StatelessWidget {
     }
 
     final perPerson = amount / participantsCount;
-    final formattedPerPerson = _formatAmount(perPerson);
-    final formattedTotal = _formatAmount(amount);
+    final formattedPerPerson = CurrencyFormatter.formatAmount(perPerson);
+    final formattedTotal = CurrencyFormatter.formatAmount(amount);
 
     String summaryText;
     if (splitType == SplitType.equally) {
@@ -1944,17 +1933,4 @@ class _LiveSummaryCard extends StatelessWidget {
     );
   }
 
-  static String _formatAmount(double value) {
-    if (value == value.roundToDouble()) {
-      final whole = value.toInt().toString();
-      final buffer = StringBuffer();
-      final len = whole.length;
-      for (var i = 0; i < len; i++) {
-        if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
-        buffer.write(whole[i]);
-      }
-      return buffer.toString();
-    }
-    return value.toStringAsFixed(2).replaceAll('.', ',');
-  }
 }
