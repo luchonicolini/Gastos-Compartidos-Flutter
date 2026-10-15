@@ -52,11 +52,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (scope.reduceMotion != _reduceMotion) {
         setState(() => _reduceMotion = scope.reduceMotion);
       }
+      if (scope.defaultCurrency != _defaultCurrency) {
+        setState(() => _defaultCurrency = scope.defaultCurrency);
+      }
     } else if (!_didInitSettings) {
       _didInitSettings = true;
       _settingsStore.isReduceMotionEnabled().then((enabled) {
         if (mounted && enabled != _reduceMotion) {
           setState(() => _reduceMotion = enabled);
+        }
+      });
+      _settingsStore.getDefaultCurrency().then((curr) {
+        if (mounted && curr != _defaultCurrency) {
+          setState(() => _defaultCurrency = curr);
         }
       });
     }
@@ -69,6 +77,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       scope.setReduceMotion(val);
     } else {
       _settingsStore.setReduceMotionEnabled(val);
+    }
+  }
+
+  void _onCurrencyChanged(Currency curr) {
+    setState(() => _defaultCurrency = curr);
+    final scope = AppSettingsScope.maybeOf(context);
+    if (scope != null) {
+      scope.setDefaultCurrency(curr);
+    } else {
+      _settingsStore.setDefaultCurrency(curr);
     }
   }
 
@@ -236,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             )
                           : null,
                       onTap: () {
-                        setState(() => _defaultCurrency = curr);
+                        _onCurrencyChanged(curr);
                         Navigator.of(context).pop();
                       },
                     ),

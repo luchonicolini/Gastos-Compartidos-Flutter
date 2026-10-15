@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gastos_compartidos/core/theme/app_theme.dart';
 import 'package:gastos_compartidos/data/database/app_database.dart' as db;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
+import 'package:gastos_compartidos/domain/models/currency.dart';
 import 'package:gastos_compartidos/features/groups/presentation/create_group_screen.dart';
+import 'package:gastos_compartidos/features/settings/presentation/app_settings_scope.dart';
 
 void main() {
   late db.AppDatabase database;
@@ -18,22 +20,31 @@ void main() {
     await database.close();
   });
 
-  Widget buildScreen({bool hasExistingGroups = true}) {
-    return MaterialApp(
-      theme: AppTheme.light(),
-      home: Builder(
-        builder: (context) => Scaffold(
-          body: ElevatedButton(
-            key: const Key('open-create-group'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => CreateGroupScreen(
-                  repository: repository,
-                  hasExistingGroups: hasExistingGroups,
+  Widget buildScreen({
+    bool hasExistingGroups = true,
+    Currency defaultCurrency = Currency.ars,
+  }) {
+    return AppSettingsScope(
+      reduceMotion: false,
+      setReduceMotion: (_) {},
+      defaultCurrency: defaultCurrency,
+      setDefaultCurrency: (_) {},
+      child: MaterialApp(
+        theme: AppTheme.light(),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              key: const Key('open-create-group'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CreateGroupScreen(
+                    repository: repository,
+                    hasExistingGroups: hasExistingGroups,
+                  ),
                 ),
               ),
+              child: const Text('Open'),
             ),
-            child: const Text('Open'),
           ),
         ),
       ),
@@ -120,5 +131,70 @@ void main() {
     // El grupo no debe quedar guardado como basura en la base de datos
     final allGroups = await repository.getAll();
     expect(allGroups, isEmpty);
+  });
+
+  testWidgets(
+      'hereda la moneda predeterminada configurada en AppSettingsScope',
+      (tester) async {
+    await tester.pumpWidget(
+      buildScreen(hasExistingGroups: true, defaultCurrency: Currency.usd),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('open-create-group')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('USD · US\$'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Viaje Miami');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('continue-create-group')));
+    await tester.pumpAndSettle();
+
+    final allGroups = await repository.getAll();
+    expect(allGroups.length, 1);
+    expect(allGroups.first.referenceCurrency, Currency.usd);
+  });
+
+  testWidgets(
+      'permite cambiar la moneda de referencia antes de crear el grupo',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      buildScreen(hasExistingGroups: true, defaultCurrency: Currency.ars),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('open-create-group')));
+    await tester.pumpAndSettle();
+
+    // Cambiar la moneda a Real brasileño
+    final currencyTile = find.byKey(const Key('create-group-currency-tile'));
+    await tester.ensureVisible(currencyTile);
+    await tester.pumpAndSettle();
+    await tester.tap(currencyTile);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Real brasileño · BRL'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('BRL · R\$'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Viaje Floripa');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('continue-create-group')));
+    await tester.pumpAndSettle();
+
+    final allGroups = await repository.getAll();
+    expect(allGroups.length, 1);
+    expect(allGroups.first.referenceCurrency, Currency.brl);
   });
 }

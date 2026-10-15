@@ -4,6 +4,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/theme/app_theme.dart';
 import 'data/database/app_database.dart';
 import 'data/repositories/local_group_repository.dart';
+import 'domain/models/currency.dart';
 import 'features/groups/presentation/home_screen.dart';
 import 'features/onboarding/data/onboarding_status_store.dart';
 import 'features/onboarding/presentation/onboarding_screen.dart';
@@ -38,6 +39,7 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
   late final AppSettingsStore _settingsStore =
       widget.settingsStore ?? LocalAppSettingsStore();
   bool _reduceMotion = false;
+  Currency _defaultCurrency = Currency.ars;
 
   @override
   void initState() {
@@ -47,8 +49,12 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
 
   Future<void> _loadSettings() async {
     final enabled = await _settingsStore.isReduceMotionEnabled();
-    if (mounted && enabled != _reduceMotion) {
-      setState(() => _reduceMotion = enabled);
+    final defaultCurrency = await _settingsStore.getDefaultCurrency();
+    if (mounted) {
+      setState(() {
+        _reduceMotion = enabled;
+        _defaultCurrency = defaultCurrency;
+      });
     }
   }
 
@@ -57,11 +63,18 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
     await _settingsStore.setReduceMotionEnabled(enabled);
   }
 
+  Future<void> _setDefaultCurrency(Currency currency) async {
+    setState(() => _defaultCurrency = currency);
+    await _settingsStore.setDefaultCurrency(currency);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppSettingsScope(
       reduceMotion: _reduceMotion,
       setReduceMotion: _setReduceMotion,
+      defaultCurrency: _defaultCurrency,
+      setDefaultCurrency: _setDefaultCurrency,
       child: MaterialApp(
         title: 'Gastos Compartidos',
         debugShowCheckedModeBanner: false,

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/local_group_repository.dart';
+import '../../../domain/models/currency.dart';
 import '../../../domain/models/group.dart';
 import '../../members/presentation/add_members_screen.dart';
+import '../../settings/presentation/app_settings_scope.dart';
 import '../application/group_operations.dart';
 
 class CreateGroupScreen extends StatefulWidget {
@@ -48,9 +50,19 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _nameController = TextEditingController();
   String _iconName = 'grill';
   String _colorHex = '#0D7E88';
+  Currency? _referenceCurrency;
   bool _isSaving = false;
   Group? _createdGroup;
   bool _isCompleted = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_referenceCurrency == null) {
+      final scope = AppSettingsScope.maybeOf(context);
+      _referenceCurrency = scope?.defaultCurrency ?? Currency.ars;
+    }
+  }
 
   String get _name =>
       _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
@@ -66,15 +78,186 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     super.dispose();
   }
 
+  void _selectReferenceCurrency() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4DBDF),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    'Moneda de referencia',
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF11232D),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Se utilizará para convertir balances y pagos sugeridos de este grupo.',
+                    style: TextStyle(
+                      fontFamily: 'Figtree',
+                      fontSize: 14,
+                      color: Color(0xFF586974),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  for (final curr in Currency.supported) ...[
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        '${curr.name} · ${curr.code}',
+                        style: TextStyle(
+                          fontFamily: 'Figtree',
+                          fontSize: 16,
+                          fontWeight: _referenceCurrency == curr
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: const Color(0xFF11232D),
+                        ),
+                      ),
+                      trailing: _referenceCurrency == curr
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: Color(0xFF0D7E88),
+                            )
+                          : null,
+                      onTap: () {
+                        setState(() => _referenceCurrency = curr);
+                        Navigator.of(bottomSheetContext).pop();
+                      },
+                    ),
+                    const Divider(color: Color(0xFFF0F4F6), height: 1),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCurrencyCard() {
+    final curr = _referenceCurrency ?? Currency.ars;
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        key: const Key('create-group-currency-tile'),
+        borderRadius: BorderRadius.circular(20),
+        onTap: _selectReferenceCurrency,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE5ECEE), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE6F4F5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.paid_outlined,
+                  color: Color(0xFF0D7E88),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Moneda de referencia',
+                      style: TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF11232D),
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Se usa para balances y pagos sugeridos.',
+                      style: TextStyle(
+                        fontFamily: 'Figtree',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF586974),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${curr.code} · ${curr.symbol}',
+                style: const TextStyle(
+                  fontFamily: 'Figtree',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF11232D),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _createGroup() async {
     if (!_canContinue) return;
     setState(() => _isSaving = true);
     try {
       final Group group;
+      final currency = _referenceCurrency ?? Currency.ars;
       if (_createdGroup == null) {
         group = await GroupOperations(
           widget.repository,
-        ).createGroup(name: _name, iconName: _iconName, colorHex: _colorHex);
+        ).createGroup(
+          name: _name,
+          iconName: _iconName,
+          colorHex: _colorHex,
+          referenceCurrency: currency,
+        );
         _createdGroup = group;
       } else {
         final latest =
@@ -86,6 +269,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           name: _name,
           iconName: _iconName,
           colorHex: _colorHex,
+          referenceCurrency: currency,
         );
         _createdGroup = group;
       }
@@ -245,6 +429,29 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           onSelected: (choice) =>
                               setState(() => _colorHex = choice.hex),
                         ),
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              'Moneda del grupo',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Se usará como referencia para calcular los balances y liquidaciones.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _buildCurrencyCard(),
                         const SizedBox(height: 22),
                         Text(
                           'VISTA PREVIA',

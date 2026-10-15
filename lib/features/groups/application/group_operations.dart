@@ -18,11 +18,13 @@ class GroupOperations {
     required String name,
     String? iconName,
     String? colorHex,
+    Currency? referenceCurrency,
   }) async {
     final group = Group(
       name: _requiredName(name),
       iconName: iconName,
       colorHex: colorHex,
+      referenceCurrency: referenceCurrency ?? Currency.ars,
     );
     await repository.save(group);
     return group;

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gastos_compartidos/core/theme/app_theme.dart';
 import 'package:gastos_compartidos/data/database/app_database.dart' hide Group;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
+import 'package:gastos_compartidos/domain/models/currency.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
 import 'package:gastos_compartidos/features/onboarding/data/onboarding_status_store.dart';
 import 'package:gastos_compartidos/features/settings/presentation/app_settings_scope.dart';
@@ -284,6 +285,8 @@ void main() {
             return AppSettingsScope(
               reduceMotion: motionReduced,
               setReduceMotion: (val) => setState(() => motionReduced = val),
+              defaultCurrency: Currency.ars,
+              setDefaultCurrency: (_) {},
               child: Builder(
                 builder: (innerContext) {
                   return SettingsScreen(repository: repository);
@@ -305,5 +308,45 @@ void main() {
 
     expect((tester.widget(switchFinder) as Switch).value, isTrue);
     expect(motionReduced, isTrue);
+  });
+
+  testWidgets(
+      'cambiar moneda predeterminada actualiza AppSettingsScope',
+      (tester) async {
+    setTestSize(tester);
+
+    var currentCurrency = Currency.ars;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return AppSettingsScope(
+              reduceMotion: false,
+              setReduceMotion: (_) {},
+              defaultCurrency: currentCurrency,
+              setDefaultCurrency: (c) => setState(() => currentCurrency = c),
+              child: Builder(
+                builder: (innerContext) {
+                  return SettingsScreen(repository: repository);
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pesos argentinos · ARS'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('settings-currency-tile')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Dólares estadounidenses · USD'));
+    await tester.pumpAndSettle();
+
+    expect(currentCurrency, Currency.usd);
+    expect(find.text('Dólares estadounidenses · USD'), findsOneWidget);
   });
 }
