@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'core/theme/app_theme.dart';
@@ -78,8 +79,18 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
       child: MaterialApp(
         title: 'Gastos Compartidos',
         debugShowCheckedModeBanner: false,
+        locale: const Locale('es'),
+        supportedLocales: const [Locale('es')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
+        // El tema oscuro está deshabilitado por ahora: la app usa siempre el
+        // tema claro. Para reactivarlo, restaurar `darkTheme: AppTheme.dark()`
+        // y volver a `ThemeMode.system`.
+        themeMode: ThemeMode.light,
         builder: (context, child) {
           final mediaQuery = MediaQuery.of(context);
           return MediaQuery(

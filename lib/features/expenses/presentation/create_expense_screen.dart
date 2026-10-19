@@ -39,6 +39,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
 
   late Currency _selectedCurrency;
   double? _exchangeRate;
+  late DateTime _expenseDate;
   late Set<String> _selectedPayerIds;
   late Set<String> _selectedParticipantIds;
   late SplitType _splitType;
@@ -126,6 +127,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
 
     _selectedCurrency =
         expense?.originalCurrency ?? widget.group.referenceCurrency;
+    _expenseDate = expense?.date ?? DateTime.now();
 
     if (expense != null) {
       _exchangeRate = expense.exchangeRate > 0 ? expense.exchangeRate : null;
@@ -138,6 +140,16 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
     final members = _availableMembers;
     if (expense != null && expense.payers.isNotEmpty) {
       _selectedPayerIds = expense.payers.map((p) => p.person.id).toSet();
+      // Con varios pagadores se conserva el aporte de cada uno al editar.
+      // Con un solo pagador se deja vacío para que siga al importe total.
+      if (expense.payers.length > 1) {
+        for (final payer in expense.payers) {
+          _payerAmountControllers[payer.person.id] = TextEditingController(
+            text: _payerAmountInSelectedCurrency(payer, expense)
+                .toStringAsFixed(2),
+          );
+        }
+      }
     } else {
       _selectedPayerIds = members.isNotEmpty ? {members.first.id} : <String>{};
     }
@@ -165,6 +177,70 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
       return CurrencyFormatter.formatWithDots(value.toInt().toString());
     }
     return value.toStringAsFixed(2).replaceAll('.', ',');
+  }
+
+  /// Expresa el aporte de un pagador en la moneda original del gasto, que es la
+  /// que usa el formulario. Los datos guardados pueden estar en la moneda de
+  /// referencia del gasto, así que se convierte con la tasa registrada.
+  double _payerAmountInSelectedCurrency(ExpensePayer payer, Expense expense) {
+    final amount = payer.amount;
+    if (amount.currency == _selectedCurrency) return amount.decimalValue;
+
+    final rate = expense.exchangeRate;
+    if (rate <= 0) return amount.decimalValue;
+
+    if (amount.currency == expense.referenceCurrency) {
+      return amount.decimalValue / rate;
+    }
+    if (amount.currency == expense.originalCurrency) {
+      return amount.decimalValue * rate;
+    }
+    return amount.decimalValue;
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year - 5);
+    final lastDate = DateTime(now.year + 1, 12, 31);
+    final initialDate = _expenseDate.isBefore(firstDate)
+        ? firstDate
+        : (_expenseDate.isAfter(lastDate) ? lastDate : _expenseDate);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: 'Elegí la fecha del gasto',
+    );
+
+    if (picked != null && mounted) {
+      setState(() => _expenseDate = picked);
+    }
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
+    const months = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
 
   @override
@@ -1046,6 +1122,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
         id: widget.initialExpense?.id,
         description: desc,
         amount: converted,
+        date: _expenseDate,
         payer: singlePayer,
         payers: payersList,
         participants: selectedParticipants,
@@ -1204,6 +1281,11 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
                           const SizedBox(height: 12),
                           _buildExchangeRateRow(),
                         ],
+                        const SizedBox(height: 12),
+                        _ExpenseDateCard(
+                          dateLabel: _formatDateLabel(_expenseDate),
+                          onTap: _pickDate,
+                        ),
                         const SizedBox(height: 22),
 
                         // Section 1: ¿Quién pagó?
@@ -1472,6 +1554,79 @@ class _DescriptionInputCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ExpenseDateCard extends StatelessWidget {
+  const _ExpenseDateCard({required this.dateLabel, required this.onTap});
+
+  final String dateLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return InkWell(
+      key: const Key('expense-date-button'),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colors.outlineVariant.withValues(alpha: 0.35),
+            width: 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 20,
+              color: colors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fecha',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    dateLabel,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: colors.primary,
+            ),
+          ],
+        ),
       ),
     );
   }

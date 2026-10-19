@@ -40,4 +40,4 @@ Nombre: Gastos Compartidos. El usuario entregó cuatro diseños claros para el o
 
 ## Accessibility & Inclusion
 
-Soporte para tamaños de texto ampliados, áreas táctiles cómodas, contraste suficiente, modo oscuro y reducción de movimiento.
+Soporte para tamaños de texto ampliados, áreas táctiles cómodas, contraste suficiente y reducción de movimiento. El modo oscuro no se ofrece en esta versión.

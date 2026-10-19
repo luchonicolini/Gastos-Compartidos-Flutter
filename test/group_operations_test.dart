@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gastos_compartidos/data/database/app_database.dart';
+import 'package:gastos_compartidos/data/database/app_database.dart' hide Expense;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
+import 'package:gastos_compartidos/domain/models/currency.dart';
+import 'package:gastos_compartidos/domain/models/expense.dart';
+import 'package:gastos_compartidos/domain/models/settlement_payment.dart';
 import 'package:gastos_compartidos/features/groups/application/group_operations.dart';
 
 void main() {
@@ -51,4 +54,103 @@ void main() {
       );
     },
   );
+
+  test(
+    'no permite cambiar la moneda de referencia si el grupo ya tiene gastos',
+    () async {
+      final database = AppDatabase.inMemory();
+      addTearDown(database.close);
+      final operations = GroupOperations(LocalGroupRepository(database));
+
+      var group = await operations.createGroup(name: 'Viaje');
+      group = await operations.addMember(group, 'Ana');
+      final ana = group.members.single;
+
+      group = await operations.saveExpense(
+        group,
+        Expense(
+          description: 'Cena',
+          amount: 1000,
+          payer: ana,
+          participants: [ana],
+          groupId: group.id,
+        ),
+      );
+
+      await expectLater(
+        operations.editGroup(
+          group,
+          name: group.name,
+          referenceCurrency: Currency.usd,
+        ),
+        throwsArgumentError,
+      );
+
+      expect(
+        (await operations.listGroups()).single.referenceCurrency,
+        Currency.ars,
+      );
+    },
+  );
+
+  test(
+    'no permite cambiar la moneda de referencia si el grupo ya tiene liquidaciones',
+    () async {
+      final database = AppDatabase.inMemory();
+      addTearDown(database.close);
+      final operations = GroupOperations(LocalGroupRepository(database));
+
+      var group = await operations.createGroup(name: 'Viaje');
+      group = await operations.addMember(group, 'Ana');
+      group = await operations.addMember(group, 'Beto');
+      final ana = group.members.firstWhere((m) => m.name == 'Ana');
+      final beto = group.members.firstWhere((m) => m.name == 'Beto');
+
+      group = await operations.confirmSettlement(
+        group,
+        FormattedSettlement(
+          payerId: beto.id,
+          payeeId: ana.id,
+          payerName: beto.name,
+          payeeName: ana.name,
+          amount: 10,
+          formattedAmount: r'$ 10,00',
+        ),
+      );
+
+      await expectLater(
+        operations.editGroup(
+          group,
+          name: group.name,
+          referenceCurrency: Currency.usd,
+        ),
+        throwsArgumentError,
+      );
+
+      expect(
+        (await operations.listGroups()).single.referenceCurrency,
+        Currency.ars,
+      );
+    },
+  );
+
+  test('un grupo sin historial sí puede cambiar de moneda de referencia',
+      () async {
+    final database = AppDatabase.inMemory();
+    addTearDown(database.close);
+    final operations = GroupOperations(LocalGroupRepository(database));
+
+    final group = await operations.createGroup(name: 'Viaje nuevo');
+    final updated = await operations.editGroup(
+      group,
+      name: group.name,
+      referenceCurrency: Currency.usd,
+    );
+
+    expect(updated.referenceCurrency, Currency.usd);
+    expect(
+      (await operations.listGroups()).single.referenceCurrency,
+      Currency.usd,
+    );
+  });
 }

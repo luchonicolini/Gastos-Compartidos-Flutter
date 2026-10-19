@@ -55,6 +55,24 @@ void main() {
     expect(find.text('Crear mi primer grupo'), findsOneWidget);
   });
 
+  testWidgets('usa siempre el tema claro y no define tema oscuro',
+      (tester) async {
+    final appDatabase = database.AppDatabase.inMemory();
+    addTearDown(appDatabase.close);
+
+    await tester.pumpWidget(
+      GastosCompartidosApp(
+        database: appDatabase,
+        onboardingStore: _CompletedOnboarding(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.light);
+    expect(app.darkTheme, isNull);
+  });
+
   testWidgets('crea el primer grupo con su estilo elegido', (tester) async {
     final appDatabase = database.AppDatabase.inMemory();
     addTearDown(appDatabase.close);

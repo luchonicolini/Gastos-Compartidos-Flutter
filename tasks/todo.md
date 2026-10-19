@@ -31,6 +31,7 @@
 - [x] Reconstruir la lista persistente de grupos con contenido.
 - [x] Reconstruir crear grupo con nombre, icono y color.
 - [x] Reconstruir editar grupo.
+- [x] Bloquear el cambio de moneda de referencia cuando el grupo ya tiene gastos o liquidaciones.
 - [x] Reconstruir eliminar grupo con confirmación.
 - [x] Reconstruir el detalle de grupo.
 - [x] Reconstruir el alta inicial de integrantes.
@@ -46,6 +47,7 @@
 - [x] Reconstruir la interfaz de división por porcentaje.
 - [x] Reconstruir la interfaz de división por partes.
 - [x] Reconstruir la edición y eliminación de gastos.
+- [x] Permitir elegir la fecha del gasto y conservarla al editar.
 
 ## Fase 4 — Balances y liquidaciones
 
@@ -57,6 +59,8 @@
 - [x] Verificar generación Drift y registro persistente de `Settlements`.
 - [x] Unificar `SettlementPayment` y Repository con importes exactos en centavos.
 - [x] Usar siempre `referenceCurrency` del grupo en balances y liquidaciones.
+- [x] Convertir a la moneda de referencia los aportes de los pagadores y la división por monto de gastos multidivisa en `BalanceCalculator`.
+- [x] Conservar el aporte de cada pagador al editar un gasto con varios pagadores.
 - [x] Cubrir balances, liquidaciones y persistencia multidivisa.
 - [x] Ejecutar `flutter test`, `dart analyze` y build release.
 
@@ -67,9 +71,10 @@
 - [ ] Definir el nuevo sistema visual coherente para todas las pantallas.
 - [ ] Definir tokens de aplicación compartidos.
 - [ ] Reconstruir navegación, sheets y safe areas.
-- [ ] Implementar contraste y modo oscuro en las nuevas pantallas.
+- [ ] Implementar contraste en todas las pantallas y reactivar el modo oscuro (deshabilitado por ahora).
 - [ ] Adaptar las nuevas pantallas a teléfonos y tablets.
 - [ ] Revisar accesibilidad completa y Reduce Motion.
 - [ ] Configurar identidad Android y firma de release.
+- [x] Exportar e importar respaldos locales (JSON versionado con confirmación al importar).
 - [ ] Generar build de prueba para Google Play Store.
 - [ ] Ejecutar checklist de publicación.

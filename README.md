@@ -31,9 +31,10 @@ Es la adaptación a Flutter de la app original para iOS (SwiftUI + SwiftData), c
 - **Balances por persona** que muestran quién tiene saldo a favor y quién debe.
 - **Liquidación inteligente:** sugiere pagos que reducen al mínimo razonable la cantidad de transferencias; los pagos se pueden confirmar y también eliminar, recalculando los balances.
 - **Funciona sin conexión:** los datos viven en el dispositivo. Sin cuenta, sin backend y sin anuncios.
+- **Respaldo manual:** exportar todos los datos a un archivo y restaurarlos en este u otro dispositivo.
 - **Onboarding** que se muestra solo la primera vez.
-- **Ajustes:** tema (sistema, claro u oscuro), moneda predeterminada y borrado de todos los datos locales.
-- **Accesibilidad:** modo oscuro, texto ampliado, áreas táctiles cómodas y reducción de movimiento.
+- **Ajustes:** moneda predeterminada y borrado de todos los datos locales.
+- **Accesibilidad:** texto ampliado, áreas táctiles cómodas y reducción de movimiento. El modo oscuro queda para una versión futura: por ahora la app usa siempre el tema claro.
 
 ### Monedas soportadas
 

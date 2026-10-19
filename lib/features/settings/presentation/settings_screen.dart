@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../data/backup/backup_codec.dart';
+import '../../../data/backup/data_backup_service.dart';
+import '../../../data/backup/plugin_backup_file_port.dart';
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/currency.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
@@ -14,13 +17,19 @@ class SettingsScreen extends StatefulWidget {
     required this.repository,
     this.onboardingStore,
     this.settingsStore,
-    this.onDataCleared,
+    this.backupService,
+    this.onDataChanged,
   });
 
   final LocalGroupRepository repository;
   final OnboardingStatusStore? onboardingStore;
   final AppSettingsStore? settingsStore;
-  final VoidCallback? onDataCleared;
+
+  /// Servicio de exportar/importar respaldos. Se puede inyectar en los tests.
+  final DataBackupService? backupService;
+
+  /// Se llama cuando los datos locales cambian (borrado o importación).
+  final VoidCallback? onDataChanged;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -33,10 +42,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final AppSettingsStore _settingsStore =
       widget.settingsStore ?? LocalAppSettingsStore();
 
-  String _themeMode = 'Usar sistema';
+  late final DataBackupService _backupService =
+      widget.backupService ??
+      DataBackupService(
+        repository: widget.repository,
+        filePort: const PluginBackupFilePort(),
+      );
+
   bool _reduceMotion = false;
   Currency _defaultCurrency = Currency.ars;
   bool _didInitSettings = false;
+  bool _isTransferringData = false;
 
   @override
   void initState() {
@@ -109,81 +125,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (currency.code == 'BRL') return 'Reales brasileños · BRL';
     if (currency.code == 'USD') return 'Dólares estadounidenses · USD';
     return '${currency.name} · ${currency.code}';
-  }
-
-  void _selectTheme() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Material(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4DBDF),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    'Tema de la app',
-                    style: TextStyle(
-                      fontFamily: 'Figtree',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF11232D),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  for (final option in ['Usar sistema', 'Claro', 'Oscuro']) ...[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        option,
-                        style: TextStyle(
-                          fontFamily: 'Figtree',
-                          fontSize: 16,
-                          fontWeight: _themeMode == option
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: const Color(0xFF11232D),
-                        ),
-                      ),
-                      trailing: _themeMode == option
-                          ? const Icon(
-                              Icons.check_rounded,
-                              color: Color(0xFF0D7E88),
-                            )
-                          : null,
-                      onTap: () {
-                        setState(() => _themeMode = option);
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    if (option != 'Oscuro')
-                      const Divider(color: Color(0xFFF0F4F6), height: 1),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   void _selectCurrency() {
@@ -360,6 +301,175 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _exportData() async {
+    if (_isTransferringData) return;
+    setState(() => _isTransferringData = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await _backupService.exportBackup();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            result == null
+                ? 'No se compartió el respaldo'
+                : 'Respaldo exportado correctamente',
+          ),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo exportar el respaldo')),
+      );
+    } finally {
+      if (mounted) setState(() => _isTransferringData = false);
+    }
+  }
+
+  Future<void> _importData() async {
+    if (_isTransferringData) return;
+    final confirmed = await _confirmImportData();
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isTransferringData = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await _backupService.importBackup();
+      if (result == null) return;
+      widget.onDataChanged?.call();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Datos importados correctamente')),
+      );
+    } on BackupFormatException {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('El archivo seleccionado no es un respaldo válido'),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo importar el respaldo')),
+      );
+    } finally {
+      if (mounted) setState(() => _isTransferringData = false);
+    }
+  }
+
+  Future<bool?> _confirmImportData() {
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD4DBDF),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F4F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.settings_backup_restore_rounded,
+                    color: Color(0xFF0D7E88),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '¿Importar este respaldo?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Figtree',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF11232D),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Se reemplazarán todos los grupos, integrantes, gastos y liquidaciones de este dispositivo por los del respaldo. Esta acción no se puede deshacer.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Figtree',
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Color(0xFF586974),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFD4DBDF)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Cancelar',
+                          style: TextStyle(
+                            fontFamily: 'Figtree',
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF586974),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        key: const Key('confirm-import-data-button'),
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF0D7E88),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Importar',
+                          style: TextStyle(
+                            fontFamily: 'Figtree',
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _confirmClearData() {
     showModalBottomSheet<void>(
       context: context,
@@ -452,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           final nav = Navigator.of(context);
                           nav.pop();
                           await widget.repository.clearAllData();
-                          widget.onDataCleared?.call();
+                          widget.onDataChanged?.call();
                           messenger.showSnackBar(
                             const SnackBar(
                               content: Text('Todos los datos fueron eliminados'),
@@ -802,22 +912,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildSettingsCard(
                         children: [
                           _SettingsTile(
-                            key: const Key('settings-theme-tile'),
-                            icon: Icons.nightlight_round,
-                            title: 'Tema',
-                            trailing: Text(
-                              _themeMode,
-                              style: const TextStyle(
-                                fontFamily: 'Figtree',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF586974),
-                              ),
-                            ),
-                            onTap: _selectTheme,
-                          ),
-                          const _CardDivider(),
-                          _SettingsTile(
                             key: const Key('settings-reduce-motion-tile'),
                             customIcon: const _WaveIcon(),
                             title: 'Reducir animaciones',
@@ -888,6 +982,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.description_outlined,
                             title: 'Política de privacidad',
                             onTap: _showPrivacyPolicy,
+                          ),
+                          const _CardDivider(),
+                          _SettingsTile(
+                            key: const Key('settings-export-data-tile'),
+                            icon: Icons.ios_share_rounded,
+                            iconColor: const Color(0xFF0D7E88),
+                            iconBgColor: const Color(0xFFE6F4F5),
+                            title: 'Exportar datos',
+                            subtitle:
+                                'Guardar un respaldo de tus grupos y gastos.',
+                            trailing: _isTransferringData
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF0D7E88),
+                                    ),
+                                  )
+                                : null,
+                            onTap: _isTransferringData ? null : _exportData,
+                          ),
+                          const _CardDivider(),
+                          _SettingsTile(
+                            key: const Key('settings-import-data-tile'),
+                            icon: Icons.settings_backup_restore_rounded,
+                            iconColor: const Color(0xFF0D7E88),
+                            iconBgColor: const Color(0xFFE6F4F5),
+                            title: 'Importar datos',
+                            subtitle: 'Restaurar un respaldo desde un archivo.',
+                            trailing: _isTransferringData
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF0D7E88),
+                                    ),
+                                  )
+                                : null,
+                            onTap: _isTransferringData ? null : _importData,
                           ),
                           const _CardDivider(),
                           _SettingsTile(

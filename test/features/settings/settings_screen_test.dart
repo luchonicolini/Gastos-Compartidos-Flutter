@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gastos_compartidos/core/theme/app_theme.dart';
+import 'package:gastos_compartidos/data/backup/backup_codec.dart';
+import 'package:gastos_compartidos/data/backup/backup_file_port.dart';
+import 'package:gastos_compartidos/data/backup/data_backup_service.dart';
 import 'package:gastos_compartidos/data/database/app_database.dart' hide Group;
 import 'package:gastos_compartidos/data/repositories/local_group_repository.dart';
 import 'package:gastos_compartidos/domain/models/currency.dart';
@@ -22,6 +25,26 @@ class _FakeOnboardingStore implements OnboardingStatusStore {
   Future<void> reset() async => resetCalled = true;
 }
 
+class _FakeBackupFilePort implements BackupFilePort {
+  String? savedContents;
+  String? savedFileName;
+  bool saveSucceeds = true;
+  String? pickedContents;
+
+  @override
+  Future<bool> saveBackup({
+    required String contents,
+    required String fileName,
+  }) async {
+    savedContents = contents;
+    savedFileName = fileName;
+    return saveSucceeds;
+  }
+
+  @override
+  Future<String?> pickBackup() async => pickedContents;
+}
+
 void main() {
   late AppDatabase database;
   late LocalGroupRepository repository;
@@ -35,12 +58,16 @@ void main() {
     await database.close();
   });
 
-  Widget buildSettingsScreen({VoidCallback? onDataCleared}) {
+  Widget buildSettingsScreen({
+    VoidCallback? onDataChanged,
+    DataBackupService? backupService,
+  }) {
     return MaterialApp(
       theme: AppTheme.light(),
       home: SettingsScreen(
         repository: repository,
-        onDataCleared: onDataCleared,
+        onDataChanged: onDataChanged,
+        backupService: backupService,
       ),
     );
   }
@@ -77,10 +104,13 @@ void main() {
     expect(find.text('Acerca de'), findsOneWidget);
 
     // Apariencia
-    expect(find.text('Tema'), findsOneWidget);
-    expect(find.text('Usar sistema'), findsOneWidget);
     expect(find.text('Reducir animaciones'), findsOneWidget);
     expect(find.byKey(const Key('settings-reduce-motion-switch')), findsOneWidget);
+
+    // El tema oscuro está deshabilitado: no se ofrece elegir tema
+    expect(find.byKey(const Key('settings-theme-tile')), findsNothing);
+    expect(find.text('Tema'), findsNothing);
+    expect(find.text('Usar sistema'), findsNothing);
 
     // Preferencias
     expect(find.text('Moneda predeterminada'), findsOneWidget);
@@ -98,6 +128,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('No se sincronizan ni se comparten.'), findsOneWidget);
+    expect(find.text('Exportar datos'), findsOneWidget);
+    expect(find.text('Importar datos'), findsOneWidget);
     expect(find.text('Política de privacidad'), findsOneWidget);
     expect(find.text('Borrar todos los datos locales'), findsOneWidget);
 
@@ -117,22 +149,11 @@ void main() {
     expect(find.text('Restablecer Onboarding'), findsOneWidget);
   });
 
-  testWidgets('permite cambiar tema y alternar reducir animaciones',
-      (tester) async {
+  testWidgets('permite alternar reducir animaciones', (tester) async {
     setTestSize(tester);
 
     await tester.pumpWidget(buildSettingsScreen());
     await tester.pumpAndSettle();
-
-    // Cambiar tema
-    await tester.tap(find.byKey(const Key('settings-theme-tile')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Tema de la app'), findsOneWidget);
-    await tester.tap(find.text('Oscuro'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Oscuro'), findsOneWidget);
 
     // Alternar switch de reducir animaciones
     final switchFinder = find.byKey(const Key('settings-reduce-motion-switch'));
@@ -202,7 +223,7 @@ void main() {
 
     bool clearedCalled = false;
     await tester.pumpWidget(
-      buildSettingsScreen(onDataCleared: () => clearedCalled = true),
+      buildSettingsScreen(onDataChanged: () => clearedCalled = true),
     );
     await tester.pumpAndSettle();
 
@@ -259,7 +280,10 @@ void main() {
     expect(find.text('Modo de prueba'), findsOneWidget);
 
     // Tocar Restablecer Onboarding
-    await tester.tap(find.byKey(const Key('settings-reset-onboarding-tile')));
+    final resetTile = find.byKey(const Key('settings-reset-onboarding-tile'));
+    await tester.ensureVisible(resetTile);
+    await tester.pumpAndSettle();
+    await tester.tap(resetTile);
     await tester.pumpAndSettle();
 
     expect(store.resetCalled, isTrue);
@@ -348,5 +372,109 @@ void main() {
 
     expect(currentCurrency, Currency.usd);
     expect(find.text('Dólares estadounidenses · USD'), findsOneWidget);
+  });
+
+  testWidgets('exportar datos comparte un respaldo con los grupos',
+      (tester) async {
+    setTestSize(tester);
+
+    await repository.save(Group(id: 'g-1', name: 'Viaje'));
+
+    final port = _FakeBackupFilePort();
+    await tester.pumpWidget(
+      buildSettingsScreen(
+        backupService: DataBackupService(
+          repository: repository,
+          filePort: port,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('settings-export-data-tile')));
+    await tester.pumpAndSettle();
+
+    expect(port.savedContents, isNotNull);
+    final payload = const BackupCodec().decode(port.savedContents!);
+    expect(payload.groups.single.name, 'Viaje');
+    expect(
+      find.text('Respaldo exportado correctamente'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('importar datos pide confirmación y reemplaza los grupos',
+      (tester) async {
+    setTestSize(tester);
+
+    await repository.save(Group(id: 'viejo', name: 'Viejo'));
+
+    final port = _FakeBackupFilePort()
+      ..pickedContents = const BackupCodec().encode([
+        Group(id: 'nuevo', name: 'Restaurado'),
+      ]);
+
+    var dataChanged = false;
+    await tester.pumpWidget(
+      buildSettingsScreen(
+        onDataChanged: () => dataChanged = true,
+        backupService: DataBackupService(
+          repository: repository,
+          filePort: port,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Abre la confirmación
+    await tester.tap(find.byKey(const Key('settings-import-data-tile')));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Importar este respaldo?'), findsOneWidget);
+
+    // Cancelar no cambia nada
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect((await repository.getAll()).single.name, 'Viejo');
+
+    // Confirmar reemplaza los datos
+    await tester.tap(find.byKey(const Key('settings-import-data-tile')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-import-data-button')));
+    await tester.pumpAndSettle();
+
+    final groups = await repository.getAll();
+    expect(groups.single.name, 'Restaurado');
+    expect(dataChanged, isTrue);
+    expect(find.text('Datos importados correctamente'), findsOneWidget);
+  });
+
+  testWidgets('importar un archivo inválido avisa y no cambia los datos',
+      (tester) async {
+    setTestSize(tester);
+
+    await repository.save(Group(id: 'viejo', name: 'Viejo'));
+
+    final port = _FakeBackupFilePort()..pickedContents = 'no es un respaldo';
+
+    await tester.pumpWidget(
+      buildSettingsScreen(
+        backupService: DataBackupService(
+          repository: repository,
+          filePort: port,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('settings-import-data-tile')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-import-data-button')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('El archivo seleccionado no es un respaldo válido'),
+      findsOneWidget,
+    );
+    expect((await repository.getAll()).single.name, 'Viejo');
   });
 }

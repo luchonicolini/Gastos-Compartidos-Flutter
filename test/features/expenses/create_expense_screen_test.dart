@@ -354,6 +354,164 @@ void main() {
   });
 
   testWidgets(
+      'al editar conserva el aporte de cada pagador en un gasto multidivisa',
+      (tester) async {
+    setTestSize(tester);
+    final ana = group.members[0];
+    final marco = group.members[1];
+    final expense = Expense(
+      id: 'expense-multi',
+      description: 'Hotel en dólares',
+      amount: 100000,
+      originalAmount: Money.fromString('100', Currency.usd),
+      originalCurrency: Currency.usd,
+      convertedAmount: Money.fromString('100000', Currency.ars),
+      referenceCurrency: Currency.ars,
+      exchangeRate: 1000,
+      payers: [
+        ExpensePayer(
+          person: ana,
+          amount: Money.fromString('60', Currency.usd),
+        ),
+        ExpensePayer(
+          person: marco,
+          amount: Money.fromString('40', Currency.usd),
+        ),
+      ],
+      participants: [ana, marco],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: CreateExpenseScreen(
+          repository: repository,
+          group: group,
+          initialExpense: expense,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final saveButton = find.byKey(const Key('save-expense-button'));
+    expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    final saved = (await repository.getAll()).single.expenses.single;
+    final amountsByPerson = {
+      for (final payer in saved.payers) payer.person.name: payer.amount,
+    };
+    expect(amountsByPerson['Ana']!.decimalValue, 60);
+    expect(amountsByPerson['Marco']!.decimalValue, 40);
+    expect(amountsByPerson['Ana']!.currency, Currency.usd);
+  });
+
+  testWidgets('guarda la fecha de hoy por defecto al crear un gasto',
+      (tester) async {
+    setTestSize(tester);
+    await tester.pumpWidget(buildScreen(group));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('expense-description-field')),
+      'Cena',
+    );
+    await tester.enterText(
+      find.byKey(const Key('expense-amount-field')),
+      '1000',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('save-expense-button')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repository.getAll()).single.expenses.single;
+    final now = DateTime.now();
+    expect(saved.date.year, now.year);
+    expect(saved.date.month, now.month);
+    expect(saved.date.day, now.day);
+  });
+
+  testWidgets('al editar conserva la fecha original del gasto', (tester) async {
+    setTestSize(tester);
+    final originalDate = DateTime(2026, 1, 10);
+    final ana = group.members[0];
+    final expense = Expense(
+      id: 'expense-date',
+      description: 'Cena vieja',
+      amount: 5000,
+      date: originalDate,
+      payer: ana,
+      participants: [ana],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: CreateExpenseScreen(
+          repository: repository,
+          group: group,
+          initialExpense: expense,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('10 de enero de 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('save-expense-button')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repository.getAll()).single.expenses.single;
+    expect(saved.date, originalDate);
+  });
+
+  testWidgets('permite elegir otra fecha con el selector', (tester) async {
+    setTestSize(tester);
+    final ana = group.members[0];
+    final expense = Expense(
+      id: 'expense-date-2',
+      description: 'Cena vieja',
+      amount: 5000,
+      date: DateTime(2026, 1, 10),
+      payer: ana,
+      participants: [ana],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: CreateExpenseScreen(
+          repository: repository,
+          group: group,
+          initialExpense: expense,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('expense-date-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Elegí la fecha del gasto'), findsOneWidget);
+    await tester.tap(find.text('20'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('20 de enero de 2026'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('save-expense-button')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repository.getAll()).single.expenses.single;
+    expect(saved.date.year, 2026);
+    expect(saved.date.month, 1);
+    expect(saved.date.day, 20);
+  });
+
+  testWidgets(
       'recuerda y sugiere automáticamente la última cotización usada para la misma moneda en el grupo',
       (tester) async {
     final groupWithPreviousBrl = group.copyWith(

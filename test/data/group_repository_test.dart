@@ -321,4 +321,46 @@ void main() {
     expect(events.first, 0);
     expect(events.last, 1);
   });
+
+  test('replaceAll reemplaza todos los datos locales', () async {
+    await repository.save(
+      Group(id: 'g-viejo', name: 'Viejo', members: [Person(id: 'p-1', name: 'A')]),
+    );
+
+    await repository.replaceAll([
+      Group(id: 'g-nuevo', name: 'Nuevo', members: [Person(id: 'p-2', name: 'B')]),
+    ]);
+
+    final groups = await repository.getAll();
+    expect(groups, hasLength(1));
+    expect(groups.single.id, 'g-nuevo');
+    expect(groups.single.members.single.name, 'B');
+  });
+
+  test('replaceAll no pierde los datos anteriores si falla', () async {
+    await repository.save(Group(id: 'g-viejo', name: 'Viejo'));
+
+    final invalido = Group(
+      id: 'g-nuevo',
+      name: 'Nuevo',
+      settlementPayments: [
+        SettlementPayment(
+          payerId: 'p-1',
+          payeeId: 'p-2',
+          payerName: 'A',
+          payeeName: 'B',
+          money: const Money(cents: 100, currency: Currency.brl),
+        ),
+      ],
+    );
+
+    await expectLater(
+      repository.replaceAll([invalido]),
+      throwsArgumentError,
+    );
+
+    final groups = await repository.getAll();
+    expect(groups, hasLength(1));
+    expect(groups.single.name, 'Viejo');
+  });
 }

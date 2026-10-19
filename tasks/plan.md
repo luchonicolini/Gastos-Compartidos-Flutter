@@ -77,7 +77,7 @@ Checkpoint: flujo completo grupo → miembros → gasto → balance → liquidac
 
 - Implementar tokens visuales Apple-inspired.
 - Adaptar navegación, sheets, gestos y componentes a Flutter.
-- Revisar modo oscuro, accesibilidad, safe areas y Reduce Motion.
+- Revisar accesibilidad, safe areas y Reduce Motion (el modo oscuro queda deshabilitado por ahora).
 - Adaptar iPhone/iPad sin bloquear la entrega Android.
 - Configurar icono, nombre, versión, firma y permisos Android.
 - Generar build de prueba y checklist de Play Store.

@@ -6,6 +6,8 @@ Las cuatro imágenes de onboarding y `Mis grupos · vacío (claro)@1x.png` entre
 
 ## Tokens iniciales
 
+> Nota: los tokens oscuros quedan documentados como referencia de diseño, pero el modo oscuro está deshabilitado en esta versión. La app usa siempre el tema claro.
+
 - Fondo claro: `#F4F6F8`; oscuro: `#101B22`.
 - Tinta principal clara: `#11232D`; oscura: `#F3F7F8`.
 - Texto secundario claro: `#586974`; oscuro: `#B6C5CC`.

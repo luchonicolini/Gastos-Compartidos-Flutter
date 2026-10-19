@@ -53,8 +53,15 @@ class BalanceCalculator {
 
       for (final payer in expense.payers) {
         if (currentMemberIds.contains(payer.person.id)) {
+          // El pagador puede haber aportado en la moneda original del gasto:
+          // para el balance siempre se acredita en la moneda de referencia.
+          final creditedCents = _toReferenceCents(
+            payer.amount.cents,
+            payer.amount.currency,
+            expense,
+          );
           balances[payer.person.id] =
-              (balances[payer.person.id] ?? 0) + payer.amount.cents;
+              (balances[payer.person.id] ?? 0) + creditedCents;
         }
       }
 
@@ -159,15 +166,45 @@ class BalanceCalculator {
     Map<String, double> details,
   ) {
     final sharesToDebit = <String, int>{};
+    var calculatedSum = 0;
     for (final p in participants) {
-      final specificAmount = Money.fromDecimal(
+      // El monto fijo se escribe en la moneda original del gasto y luego se
+      // convierte a la moneda de referencia con la tasa guardada.
+      final originalCents = Money.fromDecimal(
         details[p.id] ?? 0,
-        expense.referenceCurrency,
+        expense.originalCurrency,
       ).cents;
-      sharesToDebit[p.id] = specificAmount;
+      final convertedCents = _toReferenceCents(
+        originalCents,
+        expense.originalCurrency,
+        expense,
+      );
+      sharesToDebit[p.id] = convertedCents;
+      calculatedSum += convertedCents;
+    }
+
+    final diff = expense.convertedAmount.cents - calculatedSum;
+    if (diff != 0 && participants.isNotEmpty) {
+      final firstId = participants.first.id;
+      sharesToDebit[firstId] = (sharesToDebit[firstId] ?? 0) + diff;
     }
 
     return sharesToDebit;
+  }
+
+  /// Convierte centavos desde [from] a la moneda de referencia del gasto.
+  ///
+  /// Si ya están en la moneda de referencia se devuelven sin cambios. Si no hay
+  /// una tasa válida guardada (datos heredados) se conserva el valor original
+  /// para no romper el cálculo.
+  static int _toReferenceCents(int cents, Currency from, Expense expense) {
+    if (from == expense.referenceCurrency) return cents;
+    final rate = expense.exchangeRate;
+    if (rate <= 0) return cents;
+    return Money(
+      cents: cents,
+      currency: from,
+    ).convertTo(expense.referenceCurrency, rate).cents;
   }
 
   static Map<String, int> _calculatePercentageSharesInCents(

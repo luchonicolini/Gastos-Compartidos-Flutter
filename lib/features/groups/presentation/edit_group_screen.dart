@@ -73,6 +73,10 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   String get _name =>
       _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
 
+  bool get _canChangeCurrency =>
+      widget.group.expenses.isEmpty &&
+      widget.group.settlementPayments.isEmpty;
+
   bool get _hasChanges {
     final initialName = widget.group.name.trim();
     final initialIcon = widget.group.iconName ?? 'flight';
@@ -82,7 +86,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     return (_name.isNotEmpty && _name != initialName) ||
         _iconName != initialIcon ||
         _colorHex != initialColor ||
-        _referenceCurrency != initialCurrency;
+        (_canChangeCurrency && _referenceCurrency != initialCurrency);
   }
 
   bool get _canSave => _name.isNotEmpty && _hasChanges && !_isSaving;
@@ -147,6 +151,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   }
 
   void _selectReferenceCurrency() {
+    if (!_canChangeCurrency) return;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -682,11 +687,13 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                       const SizedBox(height: 12),
                       _buildCurrencyCard(),
                       const SizedBox(height: 8),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
-                          'Cambiarla no modifica los gastos ya cargados.',
-                          style: TextStyle(
+                          _canChangeCurrency
+                              ? 'Cambiarla no modifica los gastos ya cargados.'
+                              : 'No se puede cambiar: el grupo ya tiene gastos o pagos registrados.',
+                          style: const TextStyle(
                             fontFamily: 'Figtree',
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
@@ -961,25 +968,28 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   }
 
   Widget _buildCurrencyCard() {
+    final canChange = _canChangeCurrency;
     return Material(
-      color: Colors.white,
+      color: canChange ? Colors.white : const Color(0xFFF1F5F7),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         key: const Key('edit-group-currency-tile'),
         borderRadius: BorderRadius.circular(20),
-        onTap: _selectReferenceCurrency,
+        onTap: canChange ? _selectReferenceCurrency : null,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFE5ECEE), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            boxShadow: canChange
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
@@ -1027,13 +1037,24 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               const SizedBox(width: 8),
               Text(
                 '${_referenceCurrency.code} · ${_referenceCurrency.symbol}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Figtree',
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF11232D),
+                  color: canChange
+                      ? const Color(0xFF11232D)
+                      : const Color(0xFF586974),
                 ),
               ),
+              if (!canChange) ...[
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.lock_outline_rounded,
+                  key: Key('edit-group-currency-lock'),
+                  size: 16,
+                  color: Color(0xFF586974),
+                ),
+              ],
             ],
           ),
         ),

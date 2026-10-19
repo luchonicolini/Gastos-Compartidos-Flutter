@@ -6,7 +6,9 @@ import 'package:gastos_compartidos/data/repositories/local_group_repository.dart
 import 'package:gastos_compartidos/domain/models/currency.dart';
 import 'package:gastos_compartidos/domain/models/expense.dart';
 import 'package:gastos_compartidos/domain/models/group.dart';
+import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
+import 'package:gastos_compartidos/domain/models/settlement_payment.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
 import 'package:gastos_compartidos/features/groups/presentation/edit_group_screen.dart';
 import 'package:gastos_compartidos/features/groups/presentation/group_detail_screen.dart';
@@ -51,6 +53,16 @@ void main() {
           date: DateTime.now(),
         ),
       ),
+    );
+  }
+
+  Group createEmptyGroup() {
+    return Group(
+      name: 'Brasil 2026',
+      iconName: 'flight',
+      colorHex: '#0D7E88',
+      referenceCurrency: Currency.ars,
+      members: [Person(name: 'Luciano'), Person(name: 'Ana')],
     );
   }
 
@@ -107,9 +119,10 @@ void main() {
     expect(find.text('Se usa para balances y pagos sugeridos.'), findsOneWidget);
     expect(find.text(r'ARS · $'), findsOneWidget);
     expect(
-      find.text('Cambiarla no modifica los gastos ya cargados.'),
+      find.text('No se puede cambiar: el grupo ya tiene gastos o pagos registrados.'),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('edit-group-currency-lock')), findsOneWidget);
 
     // Sección 4: Acciones del grupo
     expect(find.text('Acciones del grupo'), findsOneWidget);
@@ -174,15 +187,22 @@ void main() {
     expect(updated.colorHex, '#C6500A');
   });
 
-  testWidgets('cambiar moneda de referencia actualiza el grupo',
+  testWidgets(
+      'cambiar moneda de referencia actualiza el grupo cuando no hay historial',
       (tester) async {
     setTestSize(tester);
 
-    final group = createTestGroup();
+    final group = createEmptyGroup();
     await repository.save(group);
 
     await tester.pumpWidget(buildEditGroupScreen(group));
     await tester.pumpAndSettle();
+
+    expect(
+      find.text('Cambiarla no modifica los gastos ya cargados.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('edit-group-currency-lock')), findsNothing);
 
     // Tocar selector de moneda
     await tester.tap(find.byKey(const Key('edit-group-currency-tile')));
@@ -200,6 +220,54 @@ void main() {
 
     final updated = await repository.getById(group.id);
     expect(updated!.referenceCurrency, Currency.usd);
+  });
+
+  testWidgets('bloquea el cambio de moneda cuando el grupo tiene gastos',
+      (tester) async {
+    setTestSize(tester);
+
+    final group = createTestGroup();
+    await repository.save(group);
+
+    await tester.pumpWidget(buildEditGroupScreen(group));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('edit-group-currency-lock')), findsOneWidget);
+
+    // Al tocar la tarjeta no se abre el selector
+    await tester.tap(find.byKey(const Key('edit-group-currency-tile')));
+    await tester.pumpAndSettle();
+    expect(find.text('Dólar estadounidense · USD'), findsNothing);
+    expect(find.text('Moneda de referencia'), findsOneWidget);
+  });
+
+  testWidgets('bloquea el cambio de moneda cuando el grupo tiene liquidaciones',
+      (tester) async {
+    setTestSize(tester);
+
+    final base = createEmptyGroup();
+    final group = base.copyWith(
+      settlementPayments: [
+        SettlementPayment(
+          payerId: base.members[1].id,
+          payeeId: base.members[0].id,
+          payerName: 'Ana',
+          payeeName: 'Luciano',
+          money: Money.fromString('10', Currency.ars),
+          groupId: base.id,
+        ),
+      ],
+    );
+    await repository.save(group);
+
+    await tester.pumpWidget(buildEditGroupScreen(group));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('edit-group-currency-lock')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('edit-group-currency-tile')));
+    await tester.pumpAndSettle();
+    expect(find.text('Dólar estadounidense · USD'), findsNothing);
   });
 
   testWidgets('tocar Archivar grupo abre modal con diseño fiel', (tester) async {

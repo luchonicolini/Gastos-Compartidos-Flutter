@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
           repository: widget.repository,
           onboardingStore: widget.onboardingStore,
           settingsStore: widget.settingsStore,
-          onDataCleared: () {
+          onDataChanged: () {
             setState(() {
               _groups = widget.repository.getAll();
             });

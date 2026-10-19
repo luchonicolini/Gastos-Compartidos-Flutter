@@ -215,6 +215,19 @@ class LocalGroupRepository {
     });
   }
 
+  /// Reemplaza todos los datos locales por [groups] en una sola transacción.
+  ///
+  /// Si algo falla durante la importación, se conserva la información que ya
+  /// estaba guardada.
+  Future<void> replaceAll(List<domain.Group> groups) async {
+    await _database.transaction(() async {
+      await clearAllData();
+      for (final group in groups) {
+        await save(group);
+      }
+    });
+  }
+
   Future<List<domain.Group>> getAll({bool includeArchived = true}) async {
     final query = _database.select(_database.groups);
     if (!includeArchived) {

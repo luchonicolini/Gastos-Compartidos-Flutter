@@ -27,6 +27,7 @@ El resultado esperado es que pueda pasar de un grupo vacío a una cuenta saldada
 | balances | Calcular saldos individuales según los gastos | gastos, miembros |
 | liquidaciones | Sugerir, confirmar y eliminar pagos | balances, miembros, persistencia |
 | monedas | Moneda de referencia, importe original, conversión y tipo de cambio | gastos, persistencia |
+| respaldo | Exportar e importar todos los datos locales como JSON versionado | persistencia, grupos |
 | viajes | Datos de destino, fechas, presupuesto y configuración del viaje | grupos, monedas |
 | experiencia-ios | Navegación, componentes, accesibilidad y estética Apple | todos los módulos de interfaz |
 
@@ -84,6 +85,7 @@ Detalle del grupo
 
 - La descripción es obligatoria.
 - El monto debe ser numérico y mayor que cero.
+- Cada gasto tiene una fecha editable que, por defecto, es la del día de carga; se conserva al editar y se usa para agrupar y ordenar el listado.
 - Debe existir un pagador.
 - Un gasto puede tener uno o varios pagadores con importes parciales que sumen el importe original.
 - Debe existir al menos un participante.
@@ -99,12 +101,14 @@ Detalle del grupo
 - Para partes, la suma debe ser mayor que cero.
 - Nunca se reemplaza el importe original por el convertido.
 - Un gasto multidivisa conserva importe original, moneda original, tipo de cambio, importe convertido y moneda de referencia.
+- Los importes de los pagadores y los montos de la división por monto se expresan en la moneda original del gasto; los balances los convierten a la moneda de referencia con el tipo de cambio guardado en cada gasto.
 - Los cálculos financieros deben utilizar una representación exacta en unidades mínimas o un value object equivalente; `double` no es la representación final del dinero.
 
 ### Viajes y monedas
 
 - Un grupo debe poder evolucionar a un viaje sin romper sus referencias históricas.
 - La moneda de referencia se configura por viaje/grupo.
+- La moneda de referencia solo puede cambiarse mientras el grupo no tenga gastos ni liquidaciones; una vez que hay historial queda fija para no reinterpretar importes ya convertidos.
 - La primera prioridad de monedas es ARS y BRL; el modelo debe aceptar cualquier código ISO válido.
 - Las tasas pueden ser manuales o automáticas en el futuro.
 - Modificar la cotización actual no modifica gastos ya registrados.
@@ -118,12 +122,21 @@ Detalle del grupo
 - Las liquidaciones confirmadas pueden eliminarse y deben recalcular los balances.
 - Cuando no hay deudas, se muestra un estado de cuentas saldadas.
 
+## Respaldo local
+
+- La app puede exportar todos los datos locales (grupos, integrantes activos y archivados, gastos y liquidaciones) a un archivo JSON versionado y compartirlo con las apps del sistema.
+- El respaldo conserva el importe original, la moneda, el tipo de cambio aplicado y el importe convertido de cada gasto, además del estado archivado de grupos y miembros.
+- La importación reemplaza todos los datos locales por los del archivo y siempre pide confirmación explícita.
+- La importación es atómica: si falla a mitad de camino, se conservan los datos que ya estaban guardados.
+- Un archivo que no es un respaldo válido se rechaza con un mensaje claro y no modifica los datos.
+- El respaldo es una acción manual del usuario: no es sincronización automática ni reemplaza al backend futuro.
+
 ## Dirección visual iOS/Apple
 
 La interfaz debe sentirse nativa de iOS sin copiar código SwiftUI literalmente.
 
 - Usar navegación, sheets, confirmaciones y gestos familiares de iOS.
-- Respetar safe areas, tamaños táctiles, Dynamic Type y modo oscuro.
+- Respetar safe areas, tamaños táctiles, Dynamic Type y reducción de movimiento. La app usa siempre el tema claro: el modo oscuro queda deshabilitado en esta versión.
 - Preferir colores semánticos y tokens de diseño en lugar de colores hardcodeados dispersos.
 - Mantener una jerarquía visual clara, sobria y orientada al contenido.
 - Usar materiales, superficies elevadas y animaciones sutiles únicamente cuando ayuden a comprender la jerarquía.
@@ -207,15 +220,14 @@ La validación móvil se agregará cuando haya un simulador o dispositivo iOS/An
 ### Fase 5 — Diseño iOS y calidad
 
 - Sistema visual Apple-inspired.
-- Dark Mode, Dynamic Type y accesibilidad.
+- Dynamic Type, contraste y accesibilidad (el modo oscuro queda deshabilitado por ahora).
 - Responsive para iPhone/iPad.
 - Animaciones y Reduce Motion.
-- Tests de integración y revisión final.
-- Preparar build y checklist de publicación para Google Play Store.
+- Tests de integración y revisión final.- Preparar build y checklist de publicación para Google Play Store.
 
 ## Límites de la primera versión
 
-- Sin sincronización entre dispositivos.
+- Sin sincronización entre dispositivos. El respaldo manual por archivo no cuenta como sincronización.
 - Sin autenticación.
 - Sin backend.
 - Sin anuncios en la primera versión.

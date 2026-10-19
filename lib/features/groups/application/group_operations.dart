@@ -37,11 +37,21 @@ class GroupOperations {
     String? colorHex,
     Currency? referenceCurrency,
   }) async {
+    final nextCurrency = referenceCurrency ?? group.referenceCurrency;
+    if (nextCurrency != group.referenceCurrency &&
+        (group.expenses.isNotEmpty || group.settlementPayments.isNotEmpty)) {
+      throw ArgumentError.value(
+        nextCurrency.code,
+        'referenceCurrency',
+        'La moneda de referencia no se puede cambiar si el grupo ya tiene '
+            'gastos o pagos registrados',
+      );
+    }
     final updated = group.copyWith(
       name: _requiredName(name),
       iconName: iconName ?? group.iconName,
       colorHex: colorHex ?? group.colorHex,
-      referenceCurrency: referenceCurrency ?? group.referenceCurrency,
+      referenceCurrency: nextCurrency,
     );
     await repository.save(updated);
     return updated;
