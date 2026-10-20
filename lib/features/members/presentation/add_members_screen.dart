@@ -5,6 +5,7 @@ import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/person.dart';
 import '../../../shared/group_visuals.dart';
+import '../../../data/preferences/self_member_store.dart';
 import '../domain/member_name_disambiguator.dart';
 import '../../expenses/presentation/create_expense_screen.dart';
 import '../../groups/application/group_operations.dart';
@@ -27,6 +28,28 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   late Group _group = widget.group;
   bool _saving = false;
   String? _duplicateSuggestion;
+  String? _selfMemberId;
+
+  @override
+  void initState() {
+    super.initState();
+    final active = _members;
+    _selfMemberId = SelfMemberStore.activeSelfMemberId(_group) ??
+        (active.isNotEmpty ? active.first.id : null);
+    _loadSelfMember();
+  }
+
+  Future<void> _loadSelfMember() async {
+    final id = await SelfMemberStore().getSelfMemberId(_group.id);
+    if (!mounted) return;
+    final active = _members;
+    final resolved = id != null && active.any((member) => member.id == id)
+        ? id
+        : (active.isNotEmpty ? active.first.id : null);
+    if (resolved != _selfMemberId) {
+      setState(() => _selfMemberId = resolved);
+    }
+  }
 
   List<Person> get _members =>
       _group.members.where((item) => !item.isArchived).toList();
@@ -64,6 +87,11 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
       ).addMember(_group, _controller.text);
       if (!mounted) return;
       _controller.clear();
+      final active = result.members.where((m) => !m.isArchived).toList();
+      if (_selfMemberId == null && active.isNotEmpty) {
+        _selfMemberId = active.first.id;
+        SelfMemberStore().setSelfMemberId(result.id, _selfMemberId!);
+      }
       setState(() {
         _group = result;
         _saving = false;
@@ -94,7 +122,19 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
     final result = await GroupOperations(
       widget.repository,
     ).setMemberArchived(_group, person.id, true);
-    if (mounted) setState(() => _group = result);
+    if (mounted) {
+      final active = result.members.where((m) => !m.isArchived).toList();
+      if (_selfMemberId == person.id) {
+        if (active.isEmpty) {
+          _selfMemberId = null;
+          SelfMemberStore().clearSelfMemberId(result.id);
+        } else {
+          _selfMemberId = active.first.id;
+          SelfMemberStore().setSelfMemberId(result.id, _selfMemberId!);
+        }
+      }
+      setState(() => _group = result);
+    }
   }
 
   @override
@@ -149,6 +189,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                           controller: _controller,
                           active: _canAdd,
                           saving: _saving,
+                          isAddingSelf: members.isEmpty,
                           onChanged: (_) {
                             if (_duplicateSuggestion != null) {
                               setState(() => _duplicateSuggestion = null);
@@ -158,6 +199,31 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                           },
                           onAdd: _add,
                         ),
+                        if (members.isEmpty) ...[
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 16,
+                                  color: colors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Ingresá tu nombre primero para identificarte en este grupo.',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         if (_duplicateSuggestion != null) ...[
                           const SizedBox(height: 10),
                           Container(
@@ -232,6 +298,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                               : _MembersList(
                                   key: const ValueKey('list'),
                                   members: members,
+                                  selfMemberId: _selfMemberId,
                                   onArchive: _archive,
                                 ),
                         ),
@@ -337,12 +404,14 @@ class _Entry extends StatelessWidget {
     required this.controller,
     required this.active,
     required this.saving,
+    this.isAddingSelf = false,
     required this.onChanged,
     required this.onAdd,
   });
   final TextEditingController controller;
   final bool active;
   final bool saving;
+  final bool isAddingSelf;
   final ValueChanged<String> onChanged;
   final VoidCallback onAdd;
   @override
@@ -366,7 +435,7 @@ class _Entry extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Nombre de la persona',
+                  (isAddingSelf ? 'Tu nombre (Vos)' : 'Nombre de la persona'),
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: active ? colors.primary : colors.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
@@ -382,7 +451,7 @@ class _Entry extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Ej. Ana',
+                    hintText: isAddingSelf ? 'Tu nombre (ej. Lucas)' : 'Ej. Ana',
                     hintStyle: theme.textTheme.titleLarge?.copyWith(
                       color: colors.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
@@ -460,11 +529,19 @@ class _EmptyMembers extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Agregate primero y después sumá al resto.',
+                'Agregate primero a vos y después sumá al resto.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Así la app sabe quién sos para calcular los balances y deudas.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
                 ),
               ),
             ],
@@ -479,9 +556,11 @@ class _MembersList extends StatelessWidget {
   const _MembersList({
     super.key,
     required this.members,
+    this.selfMemberId,
     required this.onArchive,
   });
   final List<Person> members;
+  final String? selfMemberId;
   final ValueChanged<Person> onArchive;
   @override
   Widget build(BuildContext context) {
@@ -513,7 +592,7 @@ class _MembersList extends StatelessWidget {
           _MemberRow(
             member: members[index],
             index: index,
-            self: index == 0,
+            self: selfMemberId != null ? members[index].id == selfMemberId : index == 0,
             onArchive: () => onArchive(members[index]),
           ),
           const SizedBox(height: 12),

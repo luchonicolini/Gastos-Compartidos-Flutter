@@ -78,4 +78,66 @@ void main() {
     expect(find.text('Pedro'), findsOneWidget);
     expect(find.text('Pedro (2)'), findsOneWidget);
   });
+
+  testWidgets(
+      'mantiene el badge Vos en el primer integrante aunque otro nombre ordene antes',
+      (tester) async {
+    final emptyGroup = Group(
+      name: 'Grupo Nuevo',
+      referenceCurrency: Currency.ars,
+      members: [],
+    );
+    await repository.save(emptyGroup);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: AddMembersScreen(
+          repository: repository,
+          group: emptyGroup,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Debe mostrar guía inicial de Vos
+    expect(find.text('Tu nombre (Vos)'), findsOneWidget);
+    expect(
+      find.text('Ingresá tu nombre primero para identificarte en este grupo.'),
+      findsOneWidget,
+    );
+
+    // Agregar primera persona "Luciano"
+    await tester.enterText(
+        find.byKey(const Key('member-name-field')), 'Luciano');
+    await tester.tap(find.byKey(const Key('add-member')));
+    await tester.pumpAndSettle();
+
+    // Luciano ahora tiene badge Vos
+    expect(find.text('Luciano'), findsOneWidget);
+    expect(find.text('Vos'), findsOneWidget);
+
+    // El campo ahora pide "Nombre de la persona"
+    expect(find.text('Nombre de la persona'), findsOneWidget);
+
+    // Agregar segunda persona "Lucas"
+    await tester.enterText(find.byKey(const Key('member-name-field')), 'Lucas');
+    await tester.tap(find.byKey(const Key('add-member')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lucas'), findsOneWidget);
+
+    // "Lucas" ordena antes que "Luciano", pero el badge "Vos" debe seguir
+    // en Luciano porque fue el primero en ingresar.
+    expect(find.text('Vos'), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('Vos')).dy,
+      closeTo(tester.getCenter(find.text('Luciano')).dy, 1),
+    );
+    expect(
+      tester.getCenter(find.text('Vos')).dy,
+      isNot(closeTo(tester.getCenter(find.text('Lucas')).dy, 1)),
+    );
+    expect(find.text('Soy yo'), findsNothing);
+  });
 }

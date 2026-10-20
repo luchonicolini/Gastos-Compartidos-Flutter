@@ -13,6 +13,7 @@ import '../../../logic/expense_validator.dart';
 import '../../../shared/group_visuals.dart';
 import '../../../shared/utils/currency_formatter.dart';
 import '../../groups/application/group_operations.dart';
+import '../../../data/preferences/self_member_store.dart';
 import 'split_expense_screen.dart';
 
 class CreateExpenseScreen extends StatefulWidget {
@@ -151,7 +152,12 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
         }
       }
     } else {
-      _selectedPayerIds = members.isNotEmpty ? {members.first.id} : <String>{};
+      final selfId = SelfMemberStore.activeSelfMemberId(widget.group);
+      final defaultPayerId = selfId != null && members.any((m) => m.id == selfId)
+          ? selfId
+          : (members.isNotEmpty ? members.first.id : null);
+      _selectedPayerIds =
+          defaultPayerId != null ? {defaultPayerId} : <String>{};
     }
 
     if (expense != null && expense.participants.isNotEmpty) {

@@ -10,17 +10,24 @@ import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
 import 'package:gastos_compartidos/features/groups/presentation/home_screen.dart';
+import 'package:gastos_compartidos/data/preferences/self_member_store.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
   late database.AppDatabase db;
   late LocalGroupRepository repository;
 
   setUp(() async {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+    SelfMemberStore.clearCache();
     db = database.AppDatabase.inMemory();
     repository = LocalGroupRepository(db);
   });
 
   tearDown(() async {
+    SelfMemberStore.clearCache();
     await db.close();
   });
 
@@ -354,5 +361,50 @@ void main() {
 
     // El grupo ya no está
     expect(find.text('Grupo Para Borrar'), findsNothing);
+  });
+
+  testWidgets(
+      'muestra el balance del miembro Vos aunque no sea el primero alfabéticamente',
+      (tester) async {
+    setTestSize(tester);
+
+    final ana = Person(name: 'Ana');
+    final luciano = Person(name: 'Luciano');
+    final group = Group(
+      name: 'Viaje',
+      referenceCurrency: Currency.ars,
+      members: [ana, luciano],
+    );
+    final expense = Expense(
+      description: 'Cena',
+      amount: 1000.0,
+      payer: luciano,
+      payers: [
+        ExpensePayer(
+          person: luciano,
+          amount: Money.fromDecimal(1000.0, Currency.ars),
+        ),
+      ],
+      participants: [ana],
+      groupId: group.id,
+      splitType: SplitType.equally,
+      originalCurrency: Currency.ars,
+      referenceCurrency: Currency.ars,
+      date: DateTime.now(),
+    );
+    await repository.save(group.copyWith(expenses: [expense]));
+
+    // Arranque en frío: el dato está persistido pero todavía no en caché.
+    await SelfMemberStore().setSelfMemberId(group.id, luciano.id);
+    SelfMemberStore.clearCache();
+
+    await tester.pumpWidget(buildScreen());
+    await tester.pumpAndSettle();
+
+    // Luciano pagó por Ana: le deben $ 1.000. Si se usara el primero
+    // alfabéticamente (Ana), la tarjeta diría "Debés".
+    expect(find.text('Te deben'), findsOneWidget);
+    expect(find.text(r'$ 1.000'), findsOneWidget);
+    expect(find.text('Debés'), findsNothing);
   });
 }

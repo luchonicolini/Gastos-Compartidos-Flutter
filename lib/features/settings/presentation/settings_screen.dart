@@ -693,7 +693,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     border: Border.all(color: const Color(0xFFE5ECEE)),
                   ),
                   child: const Text(
-                    'soporte@gastoscompartidos.app',
+                    'nicolini.luciano33@gmail.com',
                     style: TextStyle(
                       fontFamily: 'Figtree',
                       fontWeight: FontWeight.w700,

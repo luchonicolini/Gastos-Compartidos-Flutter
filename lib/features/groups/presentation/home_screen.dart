@@ -15,6 +15,7 @@ import 'group_detail_screen.dart';
 import '../../onboarding/data/onboarding_status_store.dart';
 import '../../settings/data/app_settings_store.dart';
 import '../../settings/presentation/settings_screen.dart';
+import '../../../data/preferences/self_member_store.dart';
 
 /// First destination after onboarding. It deliberately distinguishes a new
 /// traveller's guided start from the future list of groups with content.
@@ -37,7 +38,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Group>> _groups = widget.repository.getAll();
+  late Future<List<Group>> _groups = _loadGroups();
+
+  @override
+  void initState() {
+    super.initState();
+    SelfMemberStore.revision.addListener(_onSelfMemberChanged);
+  }
+
+  @override
+  void dispose() {
+    SelfMemberStore.revision.removeListener(_onSelfMemberChanged);
+    super.dispose();
+  }
+
+  void _onSelfMemberChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Carga los grupos y deja en caché quién es "Vos" en cada uno para que
+  /// los balances de Inicio sean correctos desde el primer render.
+  Future<List<Group>> _loadGroups() async {
+    final groups = await widget.repository.getAll();
+    for (final group in groups) {
+      await SelfMemberStore().getSelfMemberId(group.id);
+    }
+    return groups;
+  }
 
   Future<void> _openCreateGroup({required bool hasExistingGroups}) async {
     final created = await Navigator.of(context).push<bool>(
@@ -50,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (created == true && mounted) {
       setState(() {
-        _groups = widget.repository.getAll();
+        _groups = _loadGroups();
       });
     }
   }
@@ -68,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
           settingsStore: widget.settingsStore,
           onDataChanged: () {
             setState(() {
-              _groups = widget.repository.getAll();
+              _groups = _loadGroups();
             });
           },
         ),
@@ -76,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (mounted) {
       setState(() {
-        _groups = widget.repository.getAll();
+        _groups = _loadGroups();
       });
     }
   }
@@ -111,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onOpenSettings: _openSettings,
             onRefresh: () {
               setState(() {
-                _groups = widget.repository.getAll();
+                _groups = _loadGroups();
               });
             },
           );
@@ -524,6 +551,14 @@ class _GroupsListView extends StatelessWidget {
     if (group.members.isEmpty) return null;
     final balances = BalanceCalculator.calculateMemberBalances(group);
     if (balances.isEmpty) return null;
+
+    // 0. Check explicit self member
+    final selfId = SelfMemberStore.activeSelfMemberId(group);
+    if (selfId != null) {
+      for (final b in balances) {
+        if (b.id == selfId) return b;
+      }
+    }
 
     // 1. Prioritize a member explicitly named "yo" or "vos"
     for (final b in balances) {

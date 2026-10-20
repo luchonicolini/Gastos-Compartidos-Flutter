@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/local_group_repository.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/person.dart';
+import '../../../data/preferences/self_member_store.dart';
 import '../domain/member_name_disambiguator.dart';
 import '../../groups/application/group_operations.dart';
 
@@ -28,6 +29,51 @@ class GroupMembersView extends StatefulWidget {
 
 class _GroupMembersViewState extends State<GroupMembersView> {
   String? _openMenuMemberId;
+  String? _selfMemberId;
+
+  @override
+  void initState() {
+    super.initState();
+    final active = _activeMembers;
+    _selfMemberId = SelfMemberStore.activeSelfMemberId(widget.group) ??
+        (active.isNotEmpty ? active.first.id : null);
+    _loadSelfMember();
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupMembersView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final active = _activeMembers;
+    if (_selfMemberId == null ||
+        !active.any((member) => member.id == _selfMemberId)) {
+      _selfMemberId = active.isNotEmpty ? active.first.id : null;
+    }
+  }
+
+  Future<void> _loadSelfMember() async {
+    final id = await SelfMemberStore().getSelfMemberId(widget.group.id);
+    if (!mounted) return;
+    final active = _activeMembers;
+    final resolved = id != null && active.any((member) => member.id == id)
+        ? id
+        : (active.isNotEmpty ? active.first.id : null);
+    if (resolved != _selfMemberId) {
+      setState(() => _selfMemberId = resolved);
+    }
+  }
+
+  Future<void> _setSelfMember(Person member) async {
+    await SelfMemberStore().setSelfMemberId(widget.group.id, member.id);
+    if (mounted) {
+      setState(() => _selfMemberId = member.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ahora ${member.name} figura como "Vos" en este grupo.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   List<Person> get _activeMembers =>
       widget.group.members.where((m) => !m.isArchived).toList();
@@ -44,6 +90,22 @@ class _GroupMembersViewState extends State<GroupMembersView> {
     if (confirmed == true && mounted) {
       final updated = await GroupOperations(widget.repository)
           .setMemberArchived(widget.group, person.id, true);
+      if (!mounted) return;
+
+      // Si archivás a quien figura como "Vos", el badge pasa al siguiente
+      // miembro activo para que el grupo nunca quede sin referencia propia.
+      if (person.id == _selfMemberId) {
+        final active = updated.members.where((m) => !m.isArchived).toList();
+        if (active.isEmpty) {
+          _selfMemberId = null;
+          await SelfMemberStore().clearSelfMemberId(updated.id);
+        } else {
+          _selfMemberId = active.first.id;
+          await SelfMemberStore().setSelfMemberId(updated.id, _selfMemberId!);
+        }
+        if (mounted) setState(() {});
+      }
+
       widget.onGroupChanged(updated);
     }
   }
@@ -141,13 +203,14 @@ class _GroupMembersViewState extends State<GroupMembersView> {
               _ActiveMemberCard(
                 member: active[i],
                 index: i,
-                isSelf: i == 0,
+                isSelf: _selfMemberId != null ? active[i].id == _selfMemberId : i == 0,
                 isMenuOpen: _openMenuMemberId == active[i].id,
                 onMenuOpened: () =>
                     setState(() => _openMenuMemberId = active[i].id),
                 onMenuClosed: () => setState(() => _openMenuMemberId = null),
                 onEdit: () => _showEditNameDialog(active[i]),
                 onArchive: () => _showArchiveConfirmation(active[i]),
+                onMakeSelf: () => _setSelfMember(active[i]),
               ),
               const SizedBox(height: 12),
             ],
@@ -202,6 +265,7 @@ class _ActiveMemberCard extends StatelessWidget {
     required this.onMenuClosed,
     required this.onEdit,
     required this.onArchive,
+    required this.onMakeSelf,
   });
 
   final Person member;
@@ -212,6 +276,7 @@ class _ActiveMemberCard extends StatelessWidget {
   final VoidCallback onMenuClosed;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
+  final VoidCallback onMakeSelf;
 
   @override
   Widget build(BuildContext context) {
@@ -368,10 +433,40 @@ class _ActiveMemberCard extends StatelessWidget {
               onCanceled: onMenuClosed,
               onSelected: (value) {
                 onMenuClosed();
+                if (value == 'make_self') onMakeSelf();
                 if (value == 'edit') onEdit();
                 if (value == 'archive') onArchive();
               },
               itemBuilder: (context) => [
+                if (!isSelf)
+                  const PopupMenuItem<String>(
+                    value: 'make_self',
+                    key: Key('menu-make-self'),
+                    height: 48,
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_pin_circle_outlined,
+                          size: 20,
+                          color: Color(0xFF0D7E88),
+                        ),
+                        SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            'Marcar como "Vos"',
+                            style: TextStyle(
+                              fontFamily: 'Figtree',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: Color(0xFF0D7E88),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const PopupMenuItem<String>(
                   value: 'edit',
                   height: 48,

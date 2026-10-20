@@ -25,11 +25,15 @@ class BackupPayload {
     required this.version,
     required this.exportedAt,
     required this.groups,
+    this.selfMemberIds = const {},
   });
 
   final int version;
   final DateTime? exportedAt;
   final List<Group> groups;
+
+  /// Ids de los miembros marcados como "Vos", por grupo.
+  final Map<String, String> selfMemberIds;
 }
 
 /// Convierte los grupos locales a un archivo JSON versionado y viceversa.
@@ -42,14 +46,19 @@ class BackupCodec {
   const BackupCodec();
 
   static const format = 'gastos-compartidos-backup';
-  static const version = 1;
+  static const version = 2;
 
-  String encode(List<Group> groups, {DateTime? exportedAt}) {
+  String encode(
+    List<Group> groups, {
+    DateTime? exportedAt,
+    Map<String, String> selfMemberIds = const {},
+  }) {
     final payload = <String, dynamic>{
       'format': format,
       'version': version,
       'exportedAt': (exportedAt ?? DateTime.now()).toUtc().toIso8601String(),
       'groups': groups.map(_encodeGroup).toList(),
+      'selfMemberIds': selfMemberIds,
     };
     return const JsonEncoder.withIndent('  ').convert(payload);
   }
@@ -91,10 +100,9 @@ class BackupCodec {
         '(v$rawVersion). Actualizá la app para poder importarlo.',
       );
     }
-    if (rawVersion < version) {
+    if (rawVersion < 1) {
       throw BackupFormatException(
-        'El respaldo usa una versión anterior (v$rawVersion) que ya no se '
-        'puede importar.',
+        'El respaldo usa una versión no soportada (v$rawVersion).',
       );
     }
 
@@ -110,7 +118,19 @@ class BackupCodec {
       groups: rawGroups
           .map((group) => _decodeGroup(_asMap(group, 'grupo')))
           .toList(),
+      selfMemberIds: _decodeSelfMemberIds(json['selfMemberIds']),
     );
+  }
+
+  Map<String, String> _decodeSelfMemberIds(Object? raw) {
+    if (raw is! Map) return const {};
+    final result = <String, String>{};
+    raw.forEach((key, value) {
+      if (key is String && value is String && value.isNotEmpty) {
+        result[key] = value;
+      }
+    });
+    return result;
   }
 
   Map<String, dynamic> _encodeGroup(Group group) => {

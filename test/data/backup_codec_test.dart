@@ -157,6 +157,29 @@ void main() {
     expect(payload['format'], BackupCodec.format);
     expect(payload['version'], BackupCodec.version);
     expect(payload['groups'], isEmpty);
+    expect(payload['selfMemberIds'], isEmpty);
+  });
+
+  test('conserva el miembro Vos al exportar e importar', () {
+    final encoded = codec.encode(
+      [buildGroup()],
+      selfMemberIds: {'g-1': 'p-ana'},
+    );
+    final payload = codec.decode(encoded);
+
+    expect(payload.selfMemberIds, {'g-1': 'p-ana'});
+  });
+
+  test('acepta un respaldo v1 sin información del miembro Vos', () {
+    final encoded = jsonEncode({
+      'format': BackupCodec.format,
+      'version': 1,
+      'groups': const [],
+    });
+    final payload = codec.decode(encoded);
+
+    expect(payload.version, 1);
+    expect(payload.selfMemberIds, isEmpty);
   });
 
   test('rechaza un archivo que no es JSON válido', () {

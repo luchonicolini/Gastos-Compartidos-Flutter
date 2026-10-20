@@ -8,6 +8,7 @@ import 'package:gastos_compartidos/domain/models/group.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/features/groups/presentation/group_detail_screen.dart';
 import 'package:gastos_compartidos/features/members/presentation/group_members_screen.dart';
+import 'package:gastos_compartidos/data/preferences/self_member_store.dart';
 
 void main() {
   late db.AppDatabase database;
@@ -365,5 +366,64 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ana (2)'), findsOneWidget);
+  });
+
+  testWidgets(
+      'permite marcar a otra persona como Vos desde el menú de 3 puntos',
+      (tester) async {
+    setTestSize(tester);
+    await tester.pumpWidget(buildScreen(sampleGroup));
+    await tester.pumpAndSettle();
+
+    // Inicialmente Ana es la primera y tiene el badge "Vos"
+    expect(find.text('Vos'), findsOneWidget);
+
+    // Abrir menú de Marco (segundo integrante)
+    await tester.tap(find.byKey(Key('member-menu-${marco.id}')));
+    await tester.pumpAndSettle();
+
+    // Debe mostrar la opción "Marcar como 'Vos'"
+    expect(find.text('Marcar como "Vos"'), findsOneWidget);
+
+    // Tocar "Marcar como 'Vos'"
+    await tester.tap(find.text('Marcar como "Vos"'));
+    await tester.pumpAndSettle();
+
+    // El badge "Vos" sigue presente (ahora en Marco)
+    expect(find.text('Vos'), findsOneWidget);
+    expect(
+      find.text('Ahora Marco figura como "Vos" en este grupo.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'al archivar a quien figura como Vos, el badge pasa al siguiente activo',
+      (tester) async {
+    setTestSize(tester);
+    addTearDown(SelfMemberStore.clearCache);
+    await tester.pumpWidget(buildScreen(sampleGroup));
+    await tester.pumpAndSettle();
+
+    // Ana arranca como "Vos"
+    expect(
+      tester.getCenter(find.text('Vos')).dy,
+      closeTo(tester.getCenter(find.text('Ana')).dy, 1),
+    );
+
+    // Archivar a Ana
+    await tester.tap(find.byKey(Key('member-menu-${ana.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archivar persona'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-archive-button')));
+    await tester.pumpAndSettle();
+
+    // Quedan Julia y Marco activos; Julia pasa a ser "Vos".
+    expect(find.text('Vos'), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('Vos')).dy,
+      closeTo(tester.getCenter(find.text('Julia')).dy, 1),
+    );
   });
 }

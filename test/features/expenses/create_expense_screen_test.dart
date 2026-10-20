@@ -10,6 +10,7 @@ import 'package:gastos_compartidos/domain/models/money.dart';
 import 'package:gastos_compartidos/domain/models/person.dart';
 import 'package:gastos_compartidos/domain/models/split_type.dart';
 import 'package:gastos_compartidos/features/expenses/presentation/create_expense_screen.dart';
+import 'package:gastos_compartidos/data/preferences/self_member_store.dart';
 
 void main() {
   late database.AppDatabase db;
@@ -566,5 +567,32 @@ void main() {
       find.text('Última cotización en este grupo: \$ 200'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('usa como pagador por defecto al miembro marcado como Vos',
+      (tester) async {
+    setTestSize(tester);
+    addTearDown(SelfMemberStore.clearCache);
+
+    final marco = group.members[1];
+    SelfMemberStore.setCache(group.id, marco.id);
+
+    await tester.pumpWidget(buildScreen(group));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('expense-description-field')),
+      'Cena',
+    );
+    await tester.enterText(
+      find.byKey(const Key('expense-amount-field')),
+      '1000',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-expense-button')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repository.getAll()).single.expenses.single;
+    expect(saved.payer?.name, 'Marco');
   });
 }

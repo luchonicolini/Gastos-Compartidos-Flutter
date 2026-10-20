@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../data/preferences/self_member_store.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/local_group_repository.dart';
@@ -34,6 +35,38 @@ class GroupBalancesView extends StatefulWidget {
 
 class _GroupBalancesViewState extends State<GroupBalancesView> {
   late final GroupOperations _operations = GroupOperations(widget.repository);
+  String? _selfMemberId;
+
+  @override
+  void initState() {
+    super.initState();
+    final active = widget.group.members.where((m) => !m.isArchived).toList();
+    _selfMemberId = SelfMemberStore.activeSelfMemberId(widget.group) ??
+        (active.isNotEmpty ? active.first.id : null);
+    _loadSelfMember();
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupBalancesView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final active = widget.group.members.where((m) => !m.isArchived).toList();
+    if (_selfMemberId == null ||
+        !active.any((member) => member.id == _selfMemberId)) {
+      _selfMemberId = active.isNotEmpty ? active.first.id : null;
+    }
+  }
+
+  Future<void> _loadSelfMember() async {
+    final id = await SelfMemberStore().getSelfMemberId(widget.group.id);
+    if (!mounted) return;
+    final active = widget.group.members.where((m) => !m.isArchived).toList();
+    final resolved = id != null && active.any((member) => member.id == id)
+        ? id
+        : (active.isNotEmpty ? active.first.id : null);
+    if (resolved != _selfMemberId) {
+      setState(() => _selfMemberId = resolved);
+    }
+  }
 
   List<MemberBalance> get _memberBalances =>
       BalanceCalculator.calculateMemberBalances(widget.group);
@@ -204,6 +237,7 @@ class _GroupBalancesViewState extends State<GroupBalancesView> {
             _BalancesListCard(
               balances: balances,
               allMembers: widget.group.members,
+              selfMemberId: _selfMemberId,
               currencySymbol: currencySymbol,
               formatAmount: CurrencyFormatter.formatAmount,
             ),
@@ -461,12 +495,14 @@ class _BalancesListCard extends StatelessWidget {
   const _BalancesListCard({
     required this.balances,
     required this.allMembers,
+    this.selfMemberId,
     required this.currencySymbol,
     required this.formatAmount,
   });
 
   final List<MemberBalance> balances;
   final List<Person> allMembers;
+  final String? selfMemberId;
   final String currencySymbol;
   final String Function(double) formatAmount;
 
@@ -496,7 +532,7 @@ class _BalancesListCard extends StatelessWidget {
             _MemberBalanceRow(
               balanceItem: balances[i],
               index: i,
-              isSelf: i == 0,
+              isSelf: balances[i].id == selfMemberId,
               allMembers: allMembers,
               currencySymbol: currencySymbol,
               formatAmount: formatAmount,

@@ -199,7 +199,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-support-tile')));
     await tester.pumpAndSettle();
 
-    expect(find.text('soporte@gastoscompartidos.app'), findsOneWidget);
+    expect(find.text('nicolini.luciano33@gmail.com'), findsOneWidget);
     await tester.tap(find.text('Cerrar'));
     await tester.pumpAndSettle();
 
