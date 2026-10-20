@@ -20,6 +20,7 @@ class SplashScreenView extends StatelessWidget {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF11232D) : const Color(0xFFE3EEED),
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
