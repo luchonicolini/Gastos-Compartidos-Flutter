@@ -73,4 +73,30 @@ void main() {
     expect(store.completed, isTrue);
     expect(find.text('Creá tu primer grupo'), findsOneWidget);
   });
+
+  testWidgets('muestra contenido visible incluso con disableAnimations: true', (
+    tester,
+  ) async {
+    final database = AppDatabase.inMemory();
+    addTearDown(database.close);
+    final store = _MemoryStatusStore();
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: GastosCompartidosApp(database: database, onboardingStore: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final titleFinder = find.text('¿Quién pagó qué?');
+    expect(titleFinder, findsOneWidget);
+
+    final opacities = tester.widgetList<Opacity>(
+      find.ancestor(of: titleFinder, matching: find.byType(Opacity)),
+    );
+    for (final op in opacities) {
+      expect(op.opacity, isNot(0.0));
+    }
+  });
 }

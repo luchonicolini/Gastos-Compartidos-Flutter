@@ -39,7 +39,7 @@ class SplashScreenView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'Gastos Compartidos',
+            'Kune',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontFamily: 'Figtree',
               fontWeight: FontWeight.w800,

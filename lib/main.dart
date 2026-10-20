@@ -77,7 +77,7 @@ class _GastosCompartidosAppState extends State<GastosCompartidosApp> {
       defaultCurrency: _defaultCurrency,
       setDefaultCurrency: _setDefaultCurrency,
       child: MaterialApp(
-        title: 'Gastos Compartidos',
+        title: 'Kune',
         debugShowCheckedModeBanner: false,
         locale: const Locale('es'),
         supportedLocales: const [Locale('es')],

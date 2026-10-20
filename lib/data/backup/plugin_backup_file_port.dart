@@ -25,7 +25,7 @@ class PluginBackupFilePort implements BackupFilePort {
           XFile.fromData(bytes, mimeType: 'application/json', name: fileName),
         ],
         fileNameOverrides: [fileName],
-        subject: 'Respaldo de Gastos Compartidos',
+        subject: 'Respaldo de Kune',
       ),
     );
     return result.status != ShareResultStatus.dismissed;

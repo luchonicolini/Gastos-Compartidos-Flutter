@@ -70,14 +70,14 @@ class BackupCodec {
 
     if (decoded is! Map) {
       throw const BackupFormatException(
-        'El archivo no es un respaldo de Gastos Compartidos.',
+        'El archivo no es un respaldo de Kune.',
       );
     }
     final json = decoded.cast<String, dynamic>();
 
     if (json['format'] != format) {
       throw const BackupFormatException(
-        'El archivo no es un respaldo de Gastos Compartidos.',
+        'El archivo no es un respaldo de Kune.',
       );
     }
 

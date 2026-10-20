@@ -260,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Gastos Compartidos es una aplicación 100% local (local-first). Todos tus grupos, personas, gastos y cuentas se guardan exclusivamente en la memoria de este dispositivo.',
+                  'Kune es una aplicación 100% local (local-first). Todos tus grupos, personas, gastos y cuentas se guardan exclusivamente en la memoria de este dispositivo.',
                   style: TextStyle(
                     fontFamily: 'Figtree',
                     fontSize: 15,
@@ -775,7 +775,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'El uso de Gastos Compartidos es personal e intransferible. La app está pensada para facilitar la división de gastos y saldos en viajes y salidas grupales.',
+                  'El uso de Kune es personal e intransferible. La app está pensada para facilitar la división de gastos y saldos en viajes y salidas grupales.',
                   style: TextStyle(
                     fontFamily: 'Figtree',
                     fontSize: 15,
@@ -819,7 +819,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showLicenses() {
     showLicensePage(
       context: context,
-      applicationName: 'Gastos Compartidos',
+      applicationName: 'Kune',
       applicationVersion: '1.0.0',
     );
   }
@@ -1046,7 +1046,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _SettingsTile(
                             key: const Key('settings-help-tile'),
                             icon: Icons.help_outline_rounded,
-                            title: 'Cómo funciona Gastos Compartidos',
+                            title: 'Cómo funciona Kune',
                             onTap: _showHowItWorks,
                           ),
                           const _CardDivider(),

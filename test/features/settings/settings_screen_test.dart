@@ -134,7 +134,7 @@ void main() {
     expect(find.text('Borrar todos los datos locales'), findsOneWidget);
 
     // Ayuda
-    expect(find.text('Cómo funciona Gastos Compartidos'), findsOneWidget);
+    expect(find.text('Cómo funciona Kune'), findsOneWidget);
     expect(find.text('Contactar soporte'), findsOneWidget);
 
     // Acerca de

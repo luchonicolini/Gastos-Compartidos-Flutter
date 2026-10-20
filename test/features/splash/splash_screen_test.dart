@@ -15,7 +15,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Gastos Compartidos'), findsOneWidget);
+    expect(find.text('Kune'), findsOneWidget);
     expect(find.text('Cuentas claras entre amigos'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
@@ -31,7 +31,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Gastos Compartidos'), findsOneWidget);
+    expect(find.text('Kune'), findsOneWidget);
     expect(find.text('Cuentas claras entre amigos'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });

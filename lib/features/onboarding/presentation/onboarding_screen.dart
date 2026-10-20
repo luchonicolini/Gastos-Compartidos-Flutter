@@ -216,51 +216,60 @@ class _OnboardingPage extends StatelessWidget {
               180.0,
               620.0,
             );
+        final illustration = SizedBox(
+          height: artHeight,
+          child: ExcludeSemantics(child: _Illustration(index: index)),
+        );
+        final title = Text(
+          copy.title,
+          key: ValueKey('onboarding-title-$index'),
+          style: theme.textTheme.headlineLarge?.copyWith(
+            fontSize: 34,
+            fontWeight: FontWeight.w800,
+            height: 1.08,
+            letterSpacing: -0.8,
+          ),
+        );
+        final description = Text(
+          copy.description,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 16.5,
+            height: 1.48,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        );
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FadeIn(
-                duration: const Duration(milliseconds: 350),
-                animate: !disableAnimations,
-                child: SizedBox(
-                  height: artHeight,
-                  child: ExcludeSemantics(child: _Illustration(index: index)),
+              if (disableAnimations)
+                illustration
+              else
+                FadeIn(
+                  duration: const Duration(milliseconds: 350),
+                  child: illustration,
                 ),
-              ),
               const SizedBox(height: 18),
-              FadeInUp(
-                from: 14,
-                duration: const Duration(milliseconds: 320),
-                delay: const Duration(milliseconds: 60),
-                animate: !disableAnimations,
-                child: Text(
-                  copy.title,
-                  key: ValueKey('onboarding-title-$index'),
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w800,
-                    height: 1.08,
-                    letterSpacing: -0.8,
-                  ),
+              if (disableAnimations)
+                title
+              else
+                FadeInUp(
+                  from: 14,
+                  duration: const Duration(milliseconds: 320),
+                  delay: const Duration(milliseconds: 60),
+                  child: title,
                 ),
-              ),
               const SizedBox(height: 12),
-              FadeInUp(
-                from: 14,
-                duration: const Duration(milliseconds: 320),
-                delay: const Duration(milliseconds: 120),
-                animate: !disableAnimations,
-                child: Text(
-                  copy.description,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontSize: 16.5,
-                    height: 1.48,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+              if (disableAnimations)
+                description
+              else
+                FadeInUp(
+                  from: 14,
+                  duration: const Duration(milliseconds: 320),
+                  delay: const Duration(milliseconds: 120),
+                  child: description,
                 ),
-              ),
             ],
           ),
         );
