@@ -1,0 +1,10 @@
+// Flutter's included Gradle build resolves its plugins independently of android/.
+// Add Maven Central before the Plugin Portal for Kotlin plugin transitive artifacts.
+// Installed only in the temporary GRADLE_USER_HOME created by the CI workflow.
+gradle.beforeSettings { settings ->
+    settings.pluginManagement.repositories {
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+    }
+}

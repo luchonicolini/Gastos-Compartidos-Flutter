@@ -97,6 +97,8 @@ que retirar esos pagos recupera la deuda y que nombres iguales o integrantes arc
 
 El [workflow](.github/workflows/flutter.yml) instala dependencias desde el lockfile, analiza, ejecuta toda la suite y compila un APK debug.
 Corre en Ubuntu con Java 17; no requiere secretos ni firma de distribución.
+Para los plugins del build incluido de Flutter, instala un script de repositorios
+en un directorio Gradle temporal de CI. No modifica la configuración local del proyecto.
 La compilación no reemplaza pruebas en dispositivos físicos.
 El badge refleja `main`; mientras el workflow esté en un PR, sus checks son la referencia.
 
