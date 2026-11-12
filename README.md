@@ -1,177 +1,125 @@
-<div align="center">
+# Gastos Compartidos · Flutter
 
-# Gastos Compartidos
+> **English:** A local-first expense-sharing app for group trips. It preserves original currencies, tracks balances in integer cents and suggests settlement payments. Android is the initial distribution target.
 
-**Organizá los gastos de tu viaje en grupo y saldá las cuentas con la menor cantidad de transferencias.**
+[![Flutter quality](https://github.com/luchonicolini/Gastos-Compartidos-Flutter/actions/workflows/flutter.yml/badge.svg?branch=main)](https://github.com/luchonicolini/Gastos-Compartidos-Flutter/actions/workflows/flutter.yml)
 
-![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)
-![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)
-![Plataforma](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)
-![Offline](https://img.shields.io/badge/local--first-sin%20conexi%C3%B3n-0D7E88)
-![Estado](https://img.shields.io/badge/estado-en%20desarrollo-orange)
+Durante un viaje compartido, los gastos pueden tener varias monedas, pagadores y formas de división.
+La app conserva cada aporte, convierte a la moneda de referencia del grupo y muestra quién debe pagarle a quién, con datos guardados en el dispositivo.
 
-</div>
+**Estado:** en desarrollo, con Android como objetivo inicial. Adaptación de [la versión nativa iOS](https://github.com/luchonicolini/Gastos-Compartidos).
+La existencia de carpetas iOS, web y desktop no implica validación funcional en todas esas plataformas.
 
----
+## Vista previa
 
-## Descripción
+[COMPLETAR: capturas de grupos, carga multidivisa y liquidaciones de la versión Flutter]
 
-**Gastos Compartidos** es una aplicación móvil para quienes viajan o conviven con amigos, familia o compañeros y necesitan llevar la cuenta de quién pagó qué. Registrás los gastos a medida que ocurren y, al final, la app calcula cuánto le corresponde a cada persona y propone los pagos necesarios para dejar todo saldado.
+## Funcionalidades
 
-Es la adaptación a Flutter de la app original para iOS (SwiftUI + SwiftData), conservando sus reglas de negocio y adaptando la experiencia a Android.
+- Grupos e integrantes con archivado y reactivación para preservar el historial.
+- Gastos con uno o varios pagadores; edición, eliminación y fecha de consumo.
+- División equitativa, por monto, porcentaje o partes.
+- Moneda de referencia por grupo; importes originales, tasa aplicada e importe convertido por gasto.
+- Dinero representado en centavos y reparto determinista de diferencias de redondeo.
+- Balances, sugerencias de liquidación y registro o eliminación de pagos.
+- Respaldo manual en JSON y restauración con confirmación.
+- Onboarding y preferencias locales.
 
-## Características
+La primera versión funciona sin cuenta, backend, sincronización ni anuncios.
+Las tasas se registran con cada gasto; no hay cotizaciones automáticas.
+La interfaz actual usa tema claro; el modo oscuro queda pendiente.
 
-- **Grupos** con nombre, icono y color propios.
-- **Integrantes** que se pueden agregar, editar, archivar y reactivar. Quienes tienen historial no se borran: se archivan para no perder la trazabilidad de gastos y balances.
-- **Gastos con uno o varios pagadores**, sin tener que partirlos en gastos separados.
-- **Cuatro formas de dividir un gasto:** en partes iguales, por monto fijo, por porcentaje o por partes.
-- **Multimoneda:** cada gasto conserva su importe original, su moneda, el tipo de cambio aplicado y el importe convertido a la moneda de referencia del grupo. Cambiar la cotización no altera los gastos ya cargados.
-- **Dinero exacto:** los cálculos se hacen en centavos, con redondeo determinista, para que las sumas siempre cierren.
-- **Balances por persona** que muestran quién tiene saldo a favor y quién debe.
-- **Liquidación inteligente:** sugiere pagos que reducen al mínimo razonable la cantidad de transferencias; los pagos se pueden confirmar y también eliminar, recalculando los balances.
-- **Funciona sin conexión:** los datos viven en el dispositivo. Sin cuenta, sin backend y sin anuncios.
-- **Respaldo manual:** exportar todos los datos a un archivo y restaurarlos en este u otro dispositivo.
-- **Onboarding** que se muestra solo la primera vez.
-- **Ajustes:** moneda predeterminada y borrado de todos los datos locales.
-- **Accesibilidad:** texto ampliado, áreas táctiles cómodas y reducción de movimiento. El modo oscuro queda para una versión futura: por ahora la app usa siempre el tema claro.
+## Stack y decisiones técnicas
 
-### Monedas soportadas
+| Área | Implementación |
+| --- | --- |
+| Framework | Flutter y Dart; SDK Dart requerido: `^3.12.0` |
+| Persistencia | Drift sobre SQLite y repositorios |
+| Dinero | Value object `Money` en centavos; moneda original y de referencia separadas |
+| Reglas de negocio | Calculadores y validadores independientes de los widgets |
+| Preferencias | shared_preferences |
+| Interfaz | Módulos por funcionalidad; Figtree incluida con licencia SIL OFL |
+| Pruebas | flutter_test: dominio, repositorios y widgets |
 
-| Código | Moneda |
-|:------:|--------|
-| `ARS` | Peso argentino (moneda inicial) |
-| `BRL` | Real brasileño |
-| `USD` | Dólar estadounidense |
-| `EUR` | Euro |
-| `UYU` | Peso uruguayo |
+La UI delega la persistencia en repositorios y los cálculos en `lib/logic/`.
+Esta separación permite comprobar reglas financieras sin renderizar pantallas.
+La estrategia de liquidación es una heurística que reduce transferencias; no se afirma optimalidad matemática para todos los grupos.
 
-El modelo acepta cualquier código de moneda, por lo que sumar nuevas monedas es directo.
+| Directorio | Responsabilidad |
+| --- | --- |
+| `lib/domain/models/` | Entidades, monedas y dinero |
+| `lib/logic/` | Balances, divisiones, validaciones y sugerencias de pago |
+| `lib/data/` | Esquema Drift, repositorios y respaldo |
+| `lib/features/` | Pantallas y estado de cada funcionalidad |
+| `lib/core/`, `lib/shared/` | Tema, utilidades y componentes comunes |
+| `test/` | Pruebas unitarias, de datos y widgets |
 
-## Tecnologías
+## Cómo ejecutarlo
 
-| Área | Herramienta |
-|------|-------------|
-| Framework | [Flutter](https://flutter.dev) (Dart `^3.12.0`) |
-| Persistencia local | [Drift](https://drift.simonbinder.eu) + `drift_flutter` (SQLite) |
-| Preferencias | `shared_preferences` |
-| Formatos e internacionalización | `intl` |
-| Identificadores | `uuid` |
-| Gestos en listas | `flutter_slidable` |
-| Tipografía | [Figtree](https://fonts.google.com/specimen/Figtree) (SIL OFL), incluida en `assets/fonts` |
-| Generación de código | `build_runner` + `drift_dev` |
-| Análisis estático | `flutter_lints` |
+1. Instalá Flutter con Dart 3.12 o superior. El workflow utiliza Flutter **3.44.0**.
+2. Prepará Android Studio o el SDK de Android y un emulador/dispositivo.
+3. Cloná el proyecto:
 
-## Requisitos previos
+   ```bash
+   git clone https://github.com/luchonicolini/Gastos-Compartidos-Flutter.git
+   cd Gastos-Compartidos-Flutter
+   flutter doctor
+   flutter pub get --enforce-lockfile
+   flutter devices
+   flutter run
+   ```
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) en canal `stable`, con Dart `3.12` o superior.
-- Android Studio o el SDK de Android, y un emulador o dispositivo físico para correr la app.
+4. Si hay varios dispositivos, seleccioná uno con `flutter run -d <ID>`.
 
-Verificá tu entorno con:
-
-```bash
-flutter doctor
-```
-
-## Instalación y ejecución
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/luchonicolini/Gastos-Compartidos-Flutter.git
-cd Gastos-Compartidos-Flutter
-
-# 2. Instalar dependencias
-flutter pub get
-
-# 3. Ejecutar la app
-flutter run
-```
-
-### Generación de código (Drift)
-
-El código generado de la base de datos (`app_database.g.dart`) ya está versionado. Solo necesitás regenerarlo si modificás las tablas en `lib/data/database/app_database.dart`:
+El código generado de Drift ya está versionado. Después de modificar el esquema, regeneralo con:
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-## Pruebas y calidad
+## Tests y CI
 
 ```bash
-flutter test       # suite de tests unitarios y de widgets
-flutter analyze    # análisis estático
+# Verificación focalizada del ciclo de liquidación
+flutter test test/settlement_round_trip_test.dart
+
+# Suite completa y análisis
+flutter test --coverage
+flutter analyze
+
+# Compilación Android para desarrollo, sin credenciales de publicación
+flutter build apk --debug
 ```
 
-La suite cubre el dominio (dinero, validaciones, balances y liquidaciones), el repositorio local y las pantallas principales: onboarding, grupos, miembros, gastos y balances.
+Los tests existentes cubren dinero, divisiones, validaciones, multimoneda, respaldo, repositorios y pantallas.
+Los [tests de liquidación](test/settlement_round_trip_test.dart) comprueban que aplicar los pagos sugeridos deja los saldos en cero,
+que retirar esos pagos recupera la deuda y que nombres iguales o integrantes archivados conservan su identidad e historial.
 
-## Compilación
+El [workflow](.github/workflows/flutter.yml) instala dependencias desde el lockfile, analiza, ejecuta toda la suite y compila un APK debug.
+Corre en Ubuntu con Java 17; no requiere secretos ni firma de distribución.
+Para los plugins del build incluido de Flutter, instala un script de repositorios
+en un directorio Gradle temporal de CI. No modifica la configuración local del proyecto.
+La compilación no reemplaza pruebas en dispositivos físicos.
+El badge refleja `main`; mientras el workflow esté en un PR, sus checks son la referencia.
 
-```bash
-flutter build apk --release        # APK para Android
-flutter build appbundle --release  # AAB para Google Play
-flutter build web --release        # build web (verificación)
-```
+## Documentación
 
-## Arquitectura
+- [Producto](PRODUCT.md) y [reglas de negocio](SPEC.md).
+- [Diseño](DESIGN.md) y [reconstrucción de UI](UI_REBUILD.md).
+- [Plan](tasks/plan.md) y [tareas](tasks/todo.md).
 
-El proyecto separa la interfaz, el dominio y los datos. La UI no calcula balances ni escribe directamente en la base: las reglas de negocio viven en funciones puras que se pueden probar sin levantar Flutter, y la persistencia queda aislada detrás de repositorios para poder sumar sincronización más adelante sin rehacer la interfaz.
+## Próximos pasos
 
-```text
-lib/
-├── core/            # Tema y utilidades comunes
-├── data/
-│   ├── database/    # Esquema Drift (grupos, personas, gastos, pagadores,
-│   │                #   participantes, divisiones y liquidaciones)
-│   └── repositories/# Acceso a datos local
-├── domain/
-│   └── models/      # Entidades y value objects (Money, Currency, Expense, ...)
-├── logic/           # Reglas puras: validación de gastos, balances y liquidaciones
-├── features/        # Una carpeta por funcionalidad
-│   ├── onboarding/
-│   ├── groups/
-│   ├── members/
-│   ├── expenses/
-│   ├── balances/
-│   └── settings/
-├── shared/          # Componentes reutilizables
-└── main.dart
-```
+- Completar el pulido visual, la accesibilidad y las adaptaciones de pantalla.
+- Validar el flujo completo en dispositivos Android e iOS.
+- Revisar casos límite de liquidación y conservación de centavos.
+- Preparar firma de distribución y publicación en Google Play.
 
-## Documentación del proyecto
+## Pendientes de presentación
 
-| Archivo | Contenido |
-|---------|-----------|
-| [`PRODUCT.md`](PRODUCT.md) | Propósito, usuarios y principios del producto |
-| [`SPEC.md`](SPEC.md) | Especificación funcional y reglas de negocio |
-| [`DESIGN.md`](DESIGN.md) | Sistema visual: colores, tipografía y componentes |
-| [`UI_REBUILD.md`](UI_REBUILD.md) | Seguimiento de la reconstrucción de la interfaz |
-| [`tasks/plan.md`](tasks/plan.md) · [`tasks/todo.md`](tasks/todo.md) | Plan técnico y lista de tareas |
-
-## Estado del proyecto y hoja de ruta
-
-El proyecto está **en desarrollo activo**. La interfaz se está reconstruyendo pantalla por pantalla; los modelos, cálculos y datos locales ya están implementados y cubiertos por tests.
-
-- [x] Fundaciones: dinero exacto, monedas, tipo de cambio y persistencia local
-- [x] Grupos y miembros (con archivado y reactivación)
-- [x] Gastos con múltiples pagadores y las cuatro divisiones
-- [x] Balances y liquidaciones
-- [ ] Edición y eliminación de grupos desde la nueva interfaz
-- [ ] Pulido de diseño, accesibilidad y responsive
-- [ ] Publicación en Google Play Store
-
-**Fuera del alcance de la primera versión:** sincronización entre dispositivos, autenticación, backend, anuncios, cotizaciones automáticas, tickets, QR, mapas y estadísticas.
-
-## Contribuir
-
-Las contribuciones son bienvenidas. Si querés colaborar:
-
-1. Hacé un fork del repositorio.
-2. Creá una rama para tu cambio: `git checkout -b feature/mi-mejora`.
-3. Asegurate de que `flutter test` y `flutter analyze` pasen sin errores.
-4. Abrí un Pull Request describiendo el cambio.
-
-Si un cambio modifica una regla de negocio, actualizá primero `SPEC.md` y sus tests.
+- [COMPLETAR: capturas de grupos, carga multidivisa y liquidaciones de la versión Flutter]
+- [COMPLETAR: enlace a Google Play o programa de pruebas si existe una publicación]
 
 ## Autor
 
-**Luciano Nicolini** — [@luchonicolini](https://github.com/luchonicolini)
+[Luciano Nicolini](https://github.com/luchonicolini) · iOS Developer (Swift, SwiftUI), con desarrollo multiplataforma en Flutter.
