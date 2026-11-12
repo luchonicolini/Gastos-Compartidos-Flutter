@@ -17,8 +17,6 @@ jobs:
   analyze-test-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      GRADLE_USER_HOME: ${{ runner.temp }}/gradle-home
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v5
@@ -40,8 +38,9 @@ jobs:
         run: flutter test --coverage
       - name: Configure CI plugin repositories for included Gradle builds
         run: |
-          mkdir -p "$GRADLE_USER_HOME/init.d"
-          cp .github/gradle/ci-repositories.init.gradle "$GRADLE_USER_HOME/init.d/"
+          echo "GRADLE_USER_HOME=$RUNNER_TEMP/gradle-home" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/gradle-home/init.d"
+          cp .github/gradle/ci-repositories.init.gradle "$RUNNER_TEMP/gradle-home/init.d/"
       - name: Build Android debug APK
         run: flutter build apk --debug
       - name: Upload coverage
